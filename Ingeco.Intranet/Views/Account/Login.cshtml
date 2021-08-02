@@ -1,0 +1,50 @@
+﻿@model Ingeco.Intranet.Models.LoginViewModel
+
+@{
+    ViewData["Title"] = "Iniciar sesión";
+}
+
+<div class="login-container">
+    <div class="login-image">
+        
+    </div>
+    <div class="login-form">
+        <div>
+            <h2>Iniciar sesión</h2>
+            <p>Escriba sus credenciales para iniciar sesión</p>
+            <hr />
+        </div>
+        <form asp-action="Login">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="ig-login-email">
+                        <span class="fa fa-at"></span>
+                    </span>
+                </div>
+                <input asp-for="Email" class="form-control" aria-describedby="ig-login-email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="input-group mt-4">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="ig-login-password">
+                        <span class="fa fa-asterisk"></span>
+                    </span>
+                </div>
+                <input asp-for="Password" class="form-control" aria-describedby="ig-login-password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <div class="login-form-bottom">
+                <div class="checkbox">
+                    <label><input asp-for="RememberSession"> Recordar sesión</label>
+                </div>
+                <input asp-for="ReturnUrl" type="hidden" class="form-control" />
+                <input type="submit" value="Iniciar sesión" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

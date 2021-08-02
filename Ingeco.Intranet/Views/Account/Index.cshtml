@@ -1,0 +1,22 @@
+﻿@model Ingeco.Intranet.Models.AccountManagamentViewModel
+@{
+    ViewData["Title"] = "Administración de usuarios";
+}
+
+
+<h1>Administración de usuarios</h1>
+<hr />
+
+@if (Model.UsersCount > 0)
+{
+
+}
+else
+{
+    <div class="no-items-notification">
+        <p>No existen usuarios registrados en el sistema <span class="fa fa-sad-tear" />.</p>
+        <div>
+            <a href="/account/create" class="btn btn-success"><span class="fa fa-user-alt"></span> Crear nuevo</a>
+        </div>
+    </div>
+}
