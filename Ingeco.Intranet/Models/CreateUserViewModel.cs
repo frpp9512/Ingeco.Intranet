@@ -11,8 +11,9 @@ namespace Ingeco.Intranet.Models
 {
     public class CreateUserViewModel
     {
-        [DataType(DataType.Upload)]
-        public IFormFile ProfilePicture { get; set; }
+        //[DataType(DataType.Upload)]
+        //public IFormFile ProfilePicture { get; set; }
+        public string ProfilePictureId { get; set; }
 
         [Required(ErrorMessage = "Debe de escribir en nombre completo del usuario")]
         [Display(Name = "Nombre completo", Description = "El nombre completo del usuario.", Prompt = "Nombre completo")]
@@ -40,7 +41,7 @@ namespace Ingeco.Intranet.Models
         [Compare("Password", ErrorMessage = "Debe de confirmar correctamente la contraseña.")]
         public string ConfirmPassword { get; set; }
 
-        public IEnumerable<string> RolesSelected { get; set; }
+        public string[] RolesSelected { get; set; }
 
         public IEnumerable<RoleViewModel> RoleList { get; set; }
     }

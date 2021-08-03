@@ -24,6 +24,7 @@ namespace Ingeco.Intranet.Controllers
     {
         private readonly IAccountSecurityRepository _repository;
         private readonly IWebHostEnvironment _hostEnvironment;
+        private readonly string _profileTmpFolder;
         private readonly string _profileTmpPath;
         private readonly string _profileDefaultPath;
 
@@ -31,7 +32,8 @@ namespace Ingeco.Intranet.Controllers
         {
             _repository = repository;
             _hostEnvironment = hostEnvironment;
-            _profileTmpPath = Path.Combine(_hostEnvironment.WebRootPath, "img", "tmp", "profiletmp.jpg");
+            _profileTmpFolder = Path.Combine(_hostEnvironment.WebRootPath, "img", "tmp");
+            _profileTmpPath = Path.Combine(_profileTmpFolder, "profiletmp.jpg");
             _profileDefaultPath = Path.Combine(_hostEnvironment.WebRootPath, "img", "layout", "default-profile-pic.jpg");
         }
 
@@ -112,17 +114,31 @@ namespace Ingeco.Intranet.Controllers
         [HttpGet]
         public async Task<IActionResult> CreateAsync()
         {
-            if (System.IO.File.Exists(_profileTmpPath))
-            {
-                System.IO.File.Delete(_profileTmpPath);
-            }
-            var roles = await _repository.GetRolesAsync();
-            var vmRoles = GetRoleViewModels(roles);
+            RemoveTempDirectory();
             var vm = new CreateUserViewModel
             {
-                RoleList = vmRoles
+                RoleList = await GetRoleViewModelsAsync()
             };
             return View(vm);
+        }
+
+        private async Task<IEnumerable<RoleViewModel>> GetRoleViewModelsAsync()
+        {
+            var roles = await _repository.GetRolesAsync();
+            var vmRoles = GetRoleViewModels(roles);
+            return vmRoles;
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAsync(CreateUserViewModel viewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                return RedirectToActionPermanent("Index");
+            }
+            viewModel.RoleList = await GetRoleViewModelsAsync();
+            return View(viewModel);
         }
 
         private static IEnumerable<RoleViewModel> GetRoleViewModels(IEnumerable<Role> roles)
@@ -138,25 +154,38 @@ namespace Ingeco.Intranet.Controllers
         [RequestSizeLimit(5242880)]
         public async Task<IActionResult> UploadTempUserPhoto(IFormFile profilephoto)
         {
-            if (System.IO.File.Exists(_profileTmpPath))
-            {
-                System.IO.File.Delete(_profileTmpPath);
-            }
+            RemoveTempDirectory();
             if (profilephoto is not null)
             {
-                using var file = new FileStream(_profileTmpPath, FileMode.Create);
+                var fileId = Guid.NewGuid().ToString();
+                var fileName = Path.Combine(_profileTmpFolder, $"{fileId}.jpg");
+                using var file = new FileStream(fileName, FileMode.Create);
                 await profilephoto.CopyToAsync(file);
-                if (System.IO.File.Exists(_profileTmpPath))
+                if (System.IO.File.Exists(fileName))
                 {
-                    return Ok($"{Url.Action("ProfileTempPhoto")}");
+                    return Ok(new { url = $"{Url.Action("ProfileTempPhoto")}?fileId={fileId}", fileId = fileId });
+                }
+                else
+                {
+                    return BadRequest("Error creando fichero en el servidor.");
                 }
             }
             return BadRequest(new { errorMessage = "Error no esperado." });
         }
 
-        public FileStreamResult ProfileTempPhoto()
+        private void RemoveTempDirectory()
         {
-            var pictureBytes = System.IO.File.ReadAllBytes(System.IO.File.Exists(_profileTmpPath) ? _profileTmpPath : _profileDefaultPath);
+            var files = System.IO.Directory.EnumerateFiles(_profileTmpFolder);
+            foreach (var file in files)
+            {
+                System.IO.File.Delete(file);
+            }
+        }
+
+        public FileStreamResult ProfileTempPhoto(string fileId)
+        {
+            var fileName = Path.Combine(_profileTmpFolder, $"{fileId}.jpg");
+            var pictureBytes = System.IO.File.ReadAllBytes(System.IO.File.Exists(fileName) ? fileName : _profileDefaultPath);
             var ms = new MemoryStream(pictureBytes);
             return new FileStreamResult(ms, new MediaTypeHeaderValue("image/jpg"))
             {

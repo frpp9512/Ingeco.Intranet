@@ -146,7 +146,7 @@ body {
 }
 
     .profile-pic-preview > img {
-        border-radius: 50px;
+        border-radius: 500px;
         margin-bottom: 20px;
         width: 130px;
     }
