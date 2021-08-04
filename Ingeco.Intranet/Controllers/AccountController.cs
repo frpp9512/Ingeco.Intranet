@@ -145,6 +145,7 @@ namespace Ingeco.Intranet.Controllers
         {
             return roles.Select(r => new RoleViewModel
             {
+                Id = r.Id,
                 Name = r.Name,
                 Description = r.Description
             });
@@ -175,7 +176,7 @@ namespace Ingeco.Intranet.Controllers
 
         private void RemoveTempDirectory()
         {
-            var files = System.IO.Directory.EnumerateFiles(_profileTmpFolder);
+            var files = Directory.EnumerateFiles(_profileTmpFolder);
             foreach (var file in files)
             {
                 System.IO.File.Delete(file);

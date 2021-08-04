@@ -9,6 +9,8 @@ namespace Ingeco.Intranet.Models
 {
     public class RoleViewModel
     {
+        public Guid Id { get; set; }
+
         [Display(Name = "Nombre", Prompt = "Nombre del rol", Description = "Nombre único que identifica al rol.")]
         public string Name { get; set; }
 

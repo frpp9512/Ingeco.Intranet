@@ -15,6 +15,8 @@ namespace Ingeco.Intranet.Models
         //public IFormFile ProfilePicture { get; set; }
         public string ProfilePictureId { get; set; }
 
+        public string ProfilePictureFileName { get; set; }
+
         [Required(ErrorMessage = "Debe de escribir en nombre completo del usuario")]
         [Display(Name = "Nombre completo", Description = "El nombre completo del usuario.", Prompt = "Nombre completo")]
         public string Fullname { get; set; }
@@ -33,6 +35,7 @@ namespace Ingeco.Intranet.Models
         [Required(ErrorMessage = "Debe de escribir correctamente la contraseña para registrar el usuario.")]
         [Display(Name = "Contraseña", Prompt = "Contraseña", Description = "La contraseña a usar para el inicio de sesión.")]
         [DataType(DataType.Password)]
+        [MinLength(8, ErrorMessage = "La contraseña debe de tener al menos 8 caractéres.")]
         public string Password { get; set; }
 
         [Required(ErrorMessage = "Debe de confirmar correctamente la contraseña para registrar el usuario.")]

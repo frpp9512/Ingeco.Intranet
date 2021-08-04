@@ -19,6 +19,10 @@ $("#profilephoto").ajaxfileupload({
         var fileIdInput = document.getElementById("ProfilePictureId");
         fileIdInput.setAttribute("value", response.fileId);
 
+        // set the filename of the profile picture uploaded to the hidden input
+        var fileNameInput = document.getElementById("ProfilePictureFileName");
+        fileNameInput.setAttribute("value", filename);
+
         // Set the uploaded picture to the img
         var img = document.getElementById("profile-pic-preview");
         img.setAttribute("src", response.url);
