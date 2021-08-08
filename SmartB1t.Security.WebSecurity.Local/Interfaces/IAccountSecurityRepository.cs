@@ -17,26 +17,45 @@ namespace SmartB1t.Security.WebSecurity.Local.Interfaces
         /// <param name="password">The password that will be stored in the user's secrets.</param>
         /// <returns></returns>
         Task CreateUserAsync(User user, string password);
-        
+
+        /// <summary>
+        /// Get the total users registered.
+        /// </summary>
+        /// <param name="includeInactive">Defines if the inactive users will be included in count.</param>
+        /// <returns>The total of users registered.</returns>
+        Task<int> GetUsersCount(bool includeInactive = true);
+
         /// <summary>
         /// Get all the users registered.
         /// </summary>
+        /// <param name="loadUserRoles">Defines if will be loaded the User roles.</param>
         /// <returns>A collection of <see cref="User"/> with all the users registered.</returns>
-        Task<IEnumerable<User>> GetUsersAsync(Range range);
+        Task<IEnumerable<User>> GetUsersAsync(bool loadUserRoles = false);
+
+        /// <summary>
+        /// Get all the users registered in the range provided.
+        /// </summary>
+        /// <param name="startingIndex">The index to start retrieving users.</param>
+        /// <param name="count">The amount of users to retrieve.</param>
+        /// <param name="loadUserRoles">Defines if will be loaded the User roles.</param>
+        /// <returns>A collection of <see cref="User"/> with all the users in range.</returns>
+        Task<IEnumerable<User>> GetUsersAsync(int startingIndex, int count, bool loadUserRoles = false);
 
         /// <summary>
         /// Get the <see cref="User"/> with the specified id.
         /// </summary>
         /// <param name="id">The id of the <see cref="User"/> to retrieve.</param>
+        /// <param name="loadUserRoles">Defines if will be loaded the User roles.</param>
         /// <returns>The <see cref="User"/> with the specified id.</returns>
-        Task<User> GetUserAsync(Guid id);
+        Task<User> GetUserAsync(Guid id, bool loadUserRoles = false);
 
         /// <summary>
         /// Get the <see cref="User"/> with the specified email address.
         /// </summary>
         /// <param name="email">The email of the <see cref="User"/> to retrieve.</param>
+        /// <param name="loadUserRoles">Defines if will be loaded the User roles.</param>
         /// <returns>The <see cref="User"/> with the specified email.</returns>
-        Task<User> GetUserAsync(string email);
+        Task<User> GetUserAsync(string email, bool loadUserRoles = false);
         
         /// <summary>
         /// Updates the data of the specified <see cref="User"/>.

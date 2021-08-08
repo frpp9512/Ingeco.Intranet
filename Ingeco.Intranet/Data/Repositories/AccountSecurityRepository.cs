@@ -42,7 +42,7 @@ namespace Ingeco.Intranet.Data.Repositories
             return false;
         }
 
-        public async Task<bool> CheckIfUserHasRole(User user, Role role) 
+        public async Task<bool> CheckIfUserHasRole(User user, Role role)
             => await _dataContext.UserRoles
                                  .Where(ur => ur.UserId == user.Id && ur.RoleId == role.Id)
                                  .AnyAsync();
@@ -60,9 +60,9 @@ namespace Ingeco.Intranet.Data.Repositories
         {
             if (user is not null)
             {
-                var secrets = new UserSecrets 
-                { 
-                    Password = SecurityUtil.B64HashEncrypt(user.Email, password) 
+                var secrets = new UserSecrets
+                {
+                    Password = SecurityUtil.B64HashEncrypt(user.Email, password)
                 };
                 user.Secrets = secrets;
                 await _dataContext.AddAsync(user);
@@ -73,23 +73,70 @@ namespace Ingeco.Intranet.Data.Repositories
         public async Task<Role> GetRoleAsync(Guid id)
             => await _dataContext.Roles.FindAsync(id);
 
-        public async Task<Role> GetRoleAsync(string name) 
+        public async Task<Role> GetRoleAsync(string name)
             => await _dataContext.Roles.FirstOrDefaultAsync(r => r.Name == name);
 
-        public async Task<IEnumerable<Role>> GetRolesAsync() 
+        public async Task<IEnumerable<Role>> GetRolesAsync()
             => await _dataContext.Roles.Where(r => r.Active).ToListAsync();
 
-        public async Task<User> GetUserAsync(Guid id) 
-            => await _dataContext.Users.FindAsync(id);
+        public async Task<User> GetUserAsync(Guid id, bool loadUserRoles = false)
+        {
+            var user = await _dataContext.Users.FindAsync(id);
+            if (loadUserRoles)
+            {
+                user.Roles = await GetUserRolesAsync(user);
+            }
+            return user;
+        }
 
-        public async Task<User> GetUserAsync(string email) 
-            => await _dataContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+        public async Task<User> GetUserAsync(string email, bool loadUserRoles = false)
+        {
+            var user = await _dataContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (loadUserRoles)
+            {
+                user.Roles = await GetUserRolesAsync(user);
+            }
+            return user;
+        }
 
-        public async Task<IEnumerable<User>> GetUsersAsync(Range range) 
-            => await _dataContext.Users.Where(u => !u.PermanentDeactivation)
-                                       .Skip(range.Start.Value)
-                                       .Take(range.End.Value)
-                                       .ToListAsync();
+        public async Task<IEnumerable<User>> GetUsersAsync(bool loadUserRoles = false)
+        {
+            var users = (await _dataContext.Users.Where(u => !u.PermanentDeactivation)
+                                                 .Include(u => u.Roles)
+                                                 .ToListAsync());
+            if (loadUserRoles)
+            {
+                foreach (var user in users)
+                {
+                    user.Roles = await GetUserRolesAsync(user);
+                }
+            }
+            return users;
+        }
+
+        public async Task<IEnumerable<User>> GetUsersAsync(int startIndex, int count, bool loadUserRoles = false)
+        {
+            var users = await _dataContext.Users.Where(u => !u.PermanentDeactivation)
+                                                .Skip(startIndex)
+                                                .Take(count)
+                                                .ToListAsync();
+            if (loadUserRoles)
+            {
+                foreach (var user in users)
+                {
+                    user.Roles = await GetUserRolesAsync(user);
+                }
+            }
+            return users;
+        }
+
+        private async Task<IEnumerable<UserRole>> GetUserRolesAsync(User user)
+        {
+            return user is null ? null : await _dataContext.UserRoles
+                                                           .Where(ur => ur.UserId == user.Id)
+                                                           .Include(ur => ur.Role)
+                                                           .ToListAsync();
+        }
 
         public async Task RemoveRoleAsync(Role role)
         {
@@ -160,5 +207,8 @@ namespace Ingeco.Intranet.Data.Repositories
                 await _dataContext.SaveChangesAsync();
             }
         }
+
+        public async Task<int> GetUsersCount(bool includeInactive = true) 
+            => await _dataContext.Users.CountAsync(u => !u.PermanentDeactivation && (u.Active || includeInactive));
     }
 }

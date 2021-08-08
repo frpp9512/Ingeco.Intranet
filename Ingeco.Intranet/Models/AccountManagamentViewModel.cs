@@ -17,6 +17,10 @@ namespace Ingeco.Intranet.Models
 
         public int UsersPerPage { get; set; }
 
-        public int UsersCount => Users.Count();
+        public int UsersCount { get; set; }
+
+        public bool FirstPage => CurrentPage == 1;
+
+        public bool LastPage => CurrentPage == PagesCount;
     }
 }

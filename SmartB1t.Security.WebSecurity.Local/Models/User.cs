@@ -54,7 +54,7 @@ namespace SmartB1t.Security.WebSecurity.Local
         /// <summary>
         /// The list of roles assigned to the user.
         /// </summary>
-        public List<UserRole> Roles { get; set; }
+        public IEnumerable<UserRole> Roles { get; set; }
 
         /// <summary>
         /// The <see cref="UserSecrets"/> database id.

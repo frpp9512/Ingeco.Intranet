@@ -7,9 +7,74 @@
 <h1>Administración de usuarios</h1>
 <hr />
 
+<a asp-action="Create" class="btn btn-success mb-3">
+    <span class="fa fa-plus"></span>
+    Crear nuevo
+</a>
+
 @if (Model.UsersCount > 0)
 {
+    <table class="table">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Nombre y apellidos</th>
+                <th>Email</th>
+                <th>Roles</th>
+                <th class="text-center">Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model.Users)
+            {
+                <tr>
+                    <td class="align-self-baseline text-center">
+                        <img class="rounded-circle" width="35" src="/account/ProfileTempPhoto?fileId=@u.Id.ToString()" />
+                    </td>
+                    <td>
+                        @u.Fullname
+                    </td>
+                    <td>
+                        @u.Email
+                    </td>
+                    <td>
+                        @foreach (var role in u.Roles)
+                        {
+                            <span class="badge badge-dark">@role.Role.Name</span>
+                        }
+                    </td>
+                    <td class="text-center">
+                        <span class="fa @(u.Active ? "fa-check text-success" : "fa-ban text-danger")"></span>
+                    </td>
+                    <td>
+                        <a class="btn btn-success" asp-action="Edit"><span class="fa fa-user-edit"></span></a>
+                        <a class="btn btn-danger" asp-action="Remove"><span class="fa fa-user-times"></span></a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 
+    <nav aria-label="Navegación de usuarios" class="text-center">
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(Model.FirstPage ? "disabled" : "")">
+                <a class="page-link" href="/account?page=@(Model.CurrentPage - 1)&usersPerPage=@Model.UsersPerPage" tabindex="-1"><span class="fa fa-arrow-alt-circle-left"></span> Anterior</a>
+            </li>
+            @for (int i = 0; i < Model.PagesCount; i++)
+            {
+                <li class="page-item @((i + 1) == Model.CurrentPage ? "disabled" : "")">
+                    <a class="page-link" href="/account?page=@(i + 1)&usersPerPage=@Model.UsersPerPage">@(i + 1)</a>
+                </li>
+            }
+            <li class="page-item @(Model.LastPage ? "disabled" : "")">
+                <a class="page-link" href="/account?page=@(Model.CurrentPage + 1)&usersPerPage=@Model.UsersPerPage">Siguiente <span class="fa fa-arrow-alt-circle-right"></span></a>
+            </li>
+        </ul>
+        <small class="text-muted">
+            <span class="fa fa-pager"></span> Página @Model.CurrentPage de @Model.PagesCount | <span class="fa fa-users"></span> Mostrando @Model.Users.Count() de @Model.UsersCount usuarios
+        </small>
+    </nav>
 }
 else
 {

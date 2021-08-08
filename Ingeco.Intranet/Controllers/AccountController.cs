@@ -4,19 +4,18 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 using SmartB1t.Security.Extensions.AspNetCore;
 using SmartB1t.Security.WebSecurity.Local;
 using SmartB1t.Security.WebSecurity.Local.Interfaces;
+using SmartB1t.Web.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Drawing.Imaging;
-using System.Drawing;
-using System.IO;
-using Microsoft.Net.Http.Headers;
 
 namespace Ingeco.Intranet.Controllers
 {
@@ -25,7 +24,6 @@ namespace Ingeco.Intranet.Controllers
         private readonly IAccountSecurityRepository _repository;
         private readonly IWebHostEnvironment _hostEnvironment;
         private readonly string _profileTmpFolder;
-        private readonly string _profileTmpPath;
         private readonly string _profileDefaultPath;
 
         public AccountController(IAccountSecurityRepository repository, IWebHostEnvironment hostEnvironment)
@@ -33,7 +31,6 @@ namespace Ingeco.Intranet.Controllers
             _repository = repository;
             _hostEnvironment = hostEnvironment;
             _profileTmpFolder = Path.Combine(_hostEnvironment.WebRootPath, "img", "tmp");
-            _profileTmpPath = Path.Combine(_profileTmpFolder, "profiletmp.jpg");
             _profileDefaultPath = Path.Combine(_hostEnvironment.WebRootPath, "img", "layout", "default-profile-pic.jpg");
         }
 
@@ -41,7 +38,9 @@ namespace Ingeco.Intranet.Controllers
 
         [HttpGet]
         public IActionResult Login(string returnUrl)
-            => View(model: new LoginViewModel { ReturnUrl = returnUrl });
+        {
+            return View(model: new LoginViewModel { ReturnUrl = returnUrl });
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -93,20 +92,40 @@ namespace Ingeco.Intranet.Controllers
         #region Management
 
         [HttpGet]
-        public async Task<IActionResult> IndexAsync(int page = 1, int usersPerPage = 10)
+        public async Task<IActionResult> IndexAsync(int page = 1, int usersPerPage = 5, bool includeInactive = true)
         {
-            var users = await _repository.GetUsersAsync(Range.All);
-            var totalPages = (int)Math.Round((decimal)users.Count() / usersPerPage, 0, MidpointRounding.AwayFromZero);
-            if (page > totalPages)
+            RemoveTempDirectory();
+
+            var calculateIndexes = new Func<(int, int)>(() => ((page - 1) * usersPerPage, (page - 1) * usersPerPage + usersPerPage));
+            int usersCount = await _repository.GetUsersCount(includeInactive);
+
+            (int, int) indexes = calculateIndexes();
+            if (usersCount < indexes.Item1)
             {
                 page = 1;
+                indexes = calculateIndexes();
             }
+
+            var users = await _repository.GetUsersAsync(indexes.Item1, indexes.Item2, true);
+
+            foreach (User user in users)
+            {
+                if (user.ProfilePicture is not null)
+                {
+                    using var stream = new MemoryStream(user.ProfilePicture);
+                    var image = Image.FromStream(stream);
+                    image.Save(GetTempPhotoPath(user.Id.ToString()), ImageFormat.Jpeg);
+                }
+            }
+
+            var totalPages = (int)Math.Ceiling((decimal)usersCount / usersPerPage);
             var vm = new AccountManagamentViewModel
             {
                 Users = users,
-                PagesCount = totalPages,
+                PagesCount = totalPages == 0 ? 1 : totalPages,
                 CurrentPage = page,
-                UsersPerPage = usersPerPage
+                UsersPerPage = usersPerPage,
+                UsersCount = usersCount
             };
             return View(vm);
         }
@@ -124,8 +143,8 @@ namespace Ingeco.Intranet.Controllers
 
         private async Task<IEnumerable<RoleViewModel>> GetRoleViewModelsAsync()
         {
-            var roles = await _repository.GetRolesAsync();
-            var vmRoles = GetRoleViewModels(roles);
+            IEnumerable<Role> roles = await _repository.GetRolesAsync();
+            IEnumerable<RoleViewModel> vmRoles = GetRoleViewModels(roles);
             return vmRoles;
         }
 
@@ -135,21 +154,56 @@ namespace Ingeco.Intranet.Controllers
         {
             if (ModelState.IsValid)
             {
-                return RedirectToActionPermanent("Index");
+                var user = viewModel.GetModel();
+                if (!string.IsNullOrEmpty(viewModel.ProfilePictureId) && ExistsTempPhoto(viewModel.ProfilePictureId))
+                {
+                    var image = Image.FromFile(GetTempPhotoPath(viewModel.ProfilePictureId));
+                    using var memStream = new MemoryStream();
+                    image.Save(memStream, ImageFormat.Jpeg);
+                    user.ProfilePicture = memStream.ToArray();
+                    image.Dispose();
+                }
+
+                if (viewModel.RolesSelected.Length > 0)
+                {
+                    var userRoles = new List<UserRole>();
+                    foreach (string selectedRole in viewModel.RolesSelected)
+                    {
+                        var role = await _repository.GetRoleAsync(new Guid(selectedRole));
+                        if (role is not null)
+                        {
+                            userRoles.Add(new UserRole
+                            {
+                                Role = role
+                            });
+                        }
+                    }
+                    user.Roles = userRoles;
+                    await _repository.CreateUserAsync(user, viewModel.Password);
+                    TempData.SetModelCreated<User, Guid>(user.Id);
+                    return RedirectToActionPermanent("Index");
+                }
+                else
+                {
+                    ModelState.AddModelError("NoRolesSelected", "No se ha seleccionado ningún rol a desempeñar por el usuario.");
+                }
             }
             viewModel.RoleList = await GetRoleViewModelsAsync();
             return View(viewModel);
         }
 
-        private static IEnumerable<RoleViewModel> GetRoleViewModels(IEnumerable<Role> roles)
+        private bool ExistsTempPhoto(string fileId) 
+            => System.IO.File.Exists(GetTempPhotoPath(fileId));
+
+        private string GetTempPhotoPath(string fileId) 
+            => Path.Combine(_profileTmpFolder, $"{fileId}.jpg");
+
+        private static IEnumerable<RoleViewModel> GetRoleViewModels(IEnumerable<Role> roles) => roles.Select(r => new RoleViewModel
         {
-            return roles.Select(r => new RoleViewModel
-            {
-                Id = r.Id,
-                Name = r.Name,
-                Description = r.Description
-            });
-        }
+            Id = r.Id,
+            Name = r.Name,
+            Description = r.Description
+        });
 
         [RequestFormLimits(MultipartBodyLengthLimit = 5242880)]
         [RequestSizeLimit(5242880)]
@@ -158,26 +212,21 @@ namespace Ingeco.Intranet.Controllers
             RemoveTempDirectory();
             if (profilephoto is not null)
             {
-                var fileId = Guid.NewGuid().ToString();
-                var fileName = Path.Combine(_profileTmpFolder, $"{fileId}.jpg");
-                using var file = new FileStream(fileName, FileMode.Create);
+                string fileId = Guid.NewGuid().ToString();
+                string fileName = Path.Combine(_profileTmpFolder, $"{fileId}.jpg");
+                using FileStream file = new FileStream(fileName, FileMode.Create);
                 await profilephoto.CopyToAsync(file);
-                if (System.IO.File.Exists(fileName))
-                {
-                    return Ok(new { url = $"{Url.Action("ProfileTempPhoto")}?fileId={fileId}", fileId = fileId });
-                }
-                else
-                {
-                    return BadRequest("Error creando fichero en el servidor.");
-                }
+                return System.IO.File.Exists(fileName)
+                    ? Ok(new { url = $"{Url.Action("ProfileTempPhoto")}?fileId={fileId}", fileId = fileId })
+                    : BadRequest("Error creando fichero en el servidor.");
             }
             return BadRequest(new { errorMessage = "Error no esperado." });
         }
 
         private void RemoveTempDirectory()
         {
-            var files = Directory.EnumerateFiles(_profileTmpFolder);
-            foreach (var file in files)
+            IEnumerable<string> files = Directory.EnumerateFiles(_profileTmpFolder);
+            foreach (string file in files)
             {
                 System.IO.File.Delete(file);
             }
@@ -185,8 +234,8 @@ namespace Ingeco.Intranet.Controllers
 
         public FileStreamResult ProfileTempPhoto(string fileId)
         {
-            var fileName = Path.Combine(_profileTmpFolder, $"{fileId}.jpg");
-            var pictureBytes = System.IO.File.ReadAllBytes(System.IO.File.Exists(fileName) ? fileName : _profileDefaultPath);
+            string fileName = Path.Combine(_profileTmpFolder, $"{fileId}.jpg");
+            byte[] pictureBytes = System.IO.File.ReadAllBytes(System.IO.File.Exists(fileName) ? fileName : _profileDefaultPath);
             var ms = new MemoryStream(pictureBytes);
             return new FileStreamResult(ms, new MediaTypeHeaderValue("image/jpg"))
             {

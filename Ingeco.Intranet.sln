@@ -7,9 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ingeco.Intranet", "Ingeco.I
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartB1t.Security.WebSecurity.Local", "SmartB1t.Security.WebSecurity.Local\SmartB1t.Security.WebSecurity.Local.csproj", "{1AE1B88A-7344-428B-A900-EDF445CF93C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartB1t.Security", "SmartB1t.Security\SmartB1t.Security.csproj", "{263CB747-799A-4FE1-9519-4BA4B4FE374D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartB1t.Security", "SmartB1t.Security\SmartB1t.Security.csproj", "{263CB747-799A-4FE1-9519-4BA4B4FE374D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartB1t.Security.Extensions", "SmartB1t.Security.Extensions\SmartB1t.Security.Extensions.csproj", "{C4AE0CEA-0003-4261-92B8-DDC703E8D3BB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SmartB1t.Security.Extensions", "SmartB1t.Security.Extensions\SmartB1t.Security.Extensions.csproj", "{C4AE0CEA-0003-4261-92B8-DDC703E8D3BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartB1t.Web.Extensions", "SmartB1t.Web.Extensions\SmartB1t.Web.Extensions.csproj", "{1D5C4E1B-3001-4617-80FB-65C082EEDDE3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{C4AE0CEA-0003-4261-92B8-DDC703E8D3BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4AE0CEA-0003-4261-92B8-DDC703E8D3BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C4AE0CEA-0003-4261-92B8-DDC703E8D3BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D5C4E1B-3001-4617-80FB-65C082EEDDE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D5C4E1B-3001-4617-80FB-65C082EEDDE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D5C4E1B-3001-4617-80FB-65C082EEDDE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D5C4E1B-3001-4617-80FB-65C082EEDDE3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
