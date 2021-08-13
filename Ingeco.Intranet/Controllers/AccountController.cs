@@ -155,6 +155,7 @@ namespace Ingeco.Intranet.Controllers
             if (ModelState.IsValid)
             {
                 var user = viewModel.GetModel();
+
                 if (!string.IsNullOrEmpty(viewModel.ProfilePictureId) && ExistsTempPhoto(viewModel.ProfilePictureId))
                 {
                     var image = Image.FromFile(GetTempPhotoPath(viewModel.ProfilePictureId));
@@ -198,7 +199,8 @@ namespace Ingeco.Intranet.Controllers
         private string GetTempPhotoPath(string fileId) 
             => Path.Combine(_profileTmpFolder, $"{fileId}.jpg");
 
-        private static IEnumerable<RoleViewModel> GetRoleViewModels(IEnumerable<Role> roles) => roles.Select(r => new RoleViewModel
+        private static IEnumerable<RoleViewModel> GetRoleViewModels(IEnumerable<Role> roles) 
+            => roles.Select(r => new RoleViewModel
         {
             Id = r.Id,
             Name = r.Name,
@@ -241,6 +243,108 @@ namespace Ingeco.Intranet.Controllers
             {
                 FileDownloadName = "Profile.jpg"
             };
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditAsync(string id)
+        {
+            var user = await _repository.GetUserAsync(new Guid(id), true);
+            var vm = user.GetEditViewModel();
+            vm.RoleList = await GetRoleViewModelsAsync();
+            if (user.ProfilePicture is not null)
+            {
+                using var stream = new MemoryStream(user.ProfilePicture);
+                var image = Image.FromStream(stream);
+                image.Save(GetTempPhotoPath(user.Id.ToString()), ImageFormat.Jpeg);
+            }
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditAsync(EditUserViewModel viewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _repository.GetUserAsync(new Guid(viewModel.Id), true);
+
+                if (viewModel.ProfilePictureId != user.Id.ToString() 
+                    && !string.IsNullOrEmpty(viewModel.ProfilePictureId) 
+                    && ExistsTempPhoto(viewModel.ProfilePictureId))
+                {
+                    var image = Image.FromFile(GetTempPhotoPath(viewModel.ProfilePictureId));
+                    using var memStream = new MemoryStream();
+                    image.Save(memStream, ImageFormat.Jpeg);
+                    user.ProfilePicture = memStream.ToArray();
+                    image.Dispose();
+                }
+
+                user.Fullname = viewModel.Fullname;
+                user.Department = viewModel.Department;
+                user.Position = viewModel.Position;
+
+                if (viewModel.RolesSelected.Length > 0)
+                {
+                    var rolesToRemove = new List<Role>();
+                    foreach (var userRole in user.Roles)
+                    {
+                        var roleId = viewModel.RolesSelected.FirstOrDefault(r => userRole.Role.Id.ToString() == r);
+                        if (string.IsNullOrEmpty(roleId))
+                        {
+                            rolesToRemove.Add(userRole.Role);
+                        }
+                    }
+
+                    rolesToRemove.ForEach(r => _repository.RemoveRoleFromUserAsync(user, r).Wait());
+
+                    foreach (var selectedRole in viewModel.RolesSelected)
+                    {
+                        var userRole = user.Roles.FirstOrDefault(ur => ur.Role.Id.ToString() == selectedRole);
+                        if (userRole is null)
+                        {
+                            var role = _repository.GetRoleAsync(new Guid(selectedRole)).Result;
+                            _repository.AssignRoleToUserAsync(user, role).Wait();
+                        }
+                    }
+
+                    await _repository.UpdateUserAsync(user);
+
+                    TempData.SetModelUpdated<User, Guid>(new Guid(viewModel.Id));
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    ModelState.AddModelError("NoRolesSelected", "No se ha seleccionado ningún rol a desempeñar por el usuario.");
+                }
+                
+            }
+            viewModel.RoleList = await GetRoleViewModelsAsync();
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Activate(string id)
+        {
+            var user = await _repository.GetUserAsync(new Guid(id));
+            user.Active = true;
+            await _repository.UpdateUserAsync(user);
+            return Ok("Usuario activado satisfactoriamente.");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Deactivate(string id)
+        {
+            var user = await _repository.GetUserAsync(new Guid(id));
+            user.Active = false;
+            await _repository.UpdateUserAsync(user);
+            return Ok("Usuario desactivado satisfactoriamente.");
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> Delete(string id)
+        {
+            await Task.Delay(1000);
+            return Ok();
         }
 
         #endregion

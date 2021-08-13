@@ -11,8 +11,6 @@ namespace Ingeco.Intranet.Models
 {
     public class CreateUserViewModel
     {
-        //[DataType(DataType.Upload)]
-        //public IFormFile ProfilePicture { get; set; }
         public string ProfilePictureId { get; set; }
 
         public string ProfilePictureFileName { get; set; }

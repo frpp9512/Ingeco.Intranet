@@ -19,5 +19,17 @@ namespace Ingeco.Intranet.Data.Models
                 Email = viewModel.Email,
                 Active = true
             };
+
+        public static EditUserViewModel GetEditViewModel(this User user)
+            => new() 
+            {
+                Id = user.Id.ToString(),
+                Fullname = user.Fullname,
+                Email = user.Email,
+                Department = user.Department,
+                Position = user.Position,
+                RolesSelected = user.Roles.Select(ur => ur.Role.Id.ToString()).ToArray(),
+                ProfilePictureId = user.Id.ToString()
+            };
     }
 }

@@ -102,7 +102,7 @@ namespace Ingeco.Intranet.Data.Repositories
         public async Task<IEnumerable<User>> GetUsersAsync(bool loadUserRoles = false)
         {
             var users = (await _dataContext.Users.Where(u => !u.PermanentDeactivation)
-                                                 .Include(u => u.Roles)
+                                                 .OrderByDescending(u => u.Roles.Count())
                                                  .ToListAsync());
             if (loadUserRoles)
             {
@@ -119,6 +119,7 @@ namespace Ingeco.Intranet.Data.Repositories
             var users = await _dataContext.Users.Where(u => !u.PermanentDeactivation)
                                                 .Skip(startIndex)
                                                 .Take(count)
+                                                .OrderByDescending(u => u.Roles.Count())
                                                 .ToListAsync();
             if (loadUserRoles)
             {

@@ -17,7 +17,7 @@
     <table class="table">
         <thead>
             <tr>
-                <th></th>
+                <th class="text-center"><span class="fa fa-image"></span></th>
                 <th>Nombre y apellidos</th>
                 <th>Email</th>
                 <th>Roles</th>
@@ -28,7 +28,7 @@
         <tbody>
             @foreach (var u in Model.Users)
             {
-                <tr>
+                <tr id="@u.Id.ToString()">
                     <td class="align-self-baseline text-center">
                         <img class="rounded-circle" width="35" src="/account/ProfileTempPhoto?fileId=@u.Id.ToString()" />
                     </td>
@@ -41,15 +41,33 @@
                     <td>
                         @foreach (var role in u.Roles)
                         {
-                            <span class="badge badge-dark">@role.Role.Name</span>
+                            <span class="badge badge-info">
+                                @role.Role.Name
+                            </span>
                         }
                     </td>
                     <td class="text-center">
                         <span class="fa @(u.Active ? "fa-check text-success" : "fa-ban text-danger")"></span>
                     </td>
                     <td>
-                        <a class="btn btn-success" asp-action="Edit"><span class="fa fa-user-edit"></span></a>
-                        <a class="btn btn-danger" asp-action="Remove"><span class="fa fa-user-times"></span></a>
+                        @if (u.Active)
+                        {
+                            <button class="btn btn-outline-warning" onclick="RiseActivationModal('deactivate', '@u.Id.ToString()')" title="Desactivar usuario">
+                                <span class="fa fa-user-slash"></span>
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-outline-success" onclick="RiseActivationModal('activate', '@u.Id.ToString()')" title="Activar usuario">
+                                <span class="fa fa-user-check"></span>
+                            </button>
+                        }
+                        <a class="btn btn-success" asp-action="Edit" asp-route-id="@u.Id.ToString()" title="Editar usuario">
+                            <span class="fa fa-user-edit"></span>
+                        </a>
+                        <button class="btn btn-danger" onclick="RiseDeleteModal('@u.Id.ToString()')" title="Eliminar usuario">
+                            <span class="fa fa-user-times"></span>
+                        </button>
                     </td>
                 </tr>
             }
@@ -84,4 +102,198 @@ else
             <a href="/account/create" class="btn btn-success"><span class="fa fa-user-alt"></span> Crear nuevo</a>
         </div>
     </div>
+}
+
+<!-- Activation Modal -->
+<div class="modal fade" id="modifyUserActivationModal" tabindex="-1" role="dialog" aria-labelledby="modifyUserActivationModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-activation-title"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="modal-activation-content" class="modal-body">
+
+            </div>
+            <div class="modal-footer" id="modal-activation-footer">
+                <button type="button" id="modal-activation-btn-primary" class="btn btn-primary"><span class="fa fa-check"></span> Aceptar</button>
+                <button type="button" id="model-activation-btn-secondary" class="btn btn-secondary" data-dismiss="modal"><span class="fa fa-slash"></span> Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" role="dialog" aria-labelledby="deleteUserModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-delete-title"><span class="fa fa-trash"></span> Eliminar usuario</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="modal-delete-content" class="modal-body">
+
+            </div>
+            <div class="modal-footer" id="modal-delete-footer">
+                <button type="button" id="modal-delete-btn-primary" class="btn btn-danger"><span class="fa fa-trash"></span> Eliminar</button>
+                <button type="button" id="model-delete-btn-secondary" class="btn btn-secondary" data-dismiss="modal"><span class="fa fa-slash"></span> Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var id = "";
+        var action = "";
+        var userFullName = "";
+        var modalActivationContentTemplate = "¿Está seguro que desea {action} al usuario {userName}?";
+        var modalDeleteContentTemplate = "¿Está seguro que desea eleminiar al usuario {fullName}?";
+
+        function GetUserRow() {
+            return document.getElementById(id);
+        }
+
+        function GetUserFullName() {
+            return GetUserRow().children[1].innerHTML;
+        }
+
+        function GetButtonsCell() {
+            return GetUserRow().children[5];
+        }
+
+        function GetStatusCell() {
+            return GetUserRow().children[4];
+        }
+
+        function GetActivationModBtn() {
+            return GetButtonsCell().children[0];
+        }
+
+        function GetStatusSpan() {
+            return GetStatusCell().children[0];
+        }
+
+        function GetActivationModalPrimeBtn() {
+            return document.getElementById("modal-activation-btn-primary");
+        }
+
+        function RiseActivationModal(action, userId) {
+            id = userId;
+            this.action = action;
+            // Get user full name
+            var row = GetUserRow();
+            userFullName = row.children[1].innerHTML.toString();
+
+            // Update modal title
+            var modalTitle = document.getElementById("modal-activation-title");
+            modalTitle.innerHTML = action == "activate" ? "Activar usuario" : "Desactivar usuario";
+
+            // Update modal content text
+            var modalContent = document.getElementById("modal-activation-content");
+            modalText = modalActivationContentTemplate.replace("{action}", action == "activation" ? "activar" : "desactivar")
+                .replace("{userName}", userFullName);
+            modalContent.innerHTML = modalText;
+
+            var modalPrimeBtn = GetActivationModalPrimeBtn();
+            modalPrimeBtn.onclick = SendActivationModRequest;
+
+            ShowActivationModalFooter();
+            $("#modifyUserActivationModal").modal();
+        }
+
+        function ShowActivationModalFooter() {
+            SetActivationModalFooterVisibility("flex");
+        }
+
+        function HideActivationModelFooter() {
+            SetActivationModalFooterVisibility("none");
+        }
+
+        function SetActivationModalFooterVisibility(visibility) {
+            var modalFooter = document.getElementById("modal-activation-footer");
+            modalFooter.style.display = visibility;
+        }
+
+        function SendActivationModRequest() {
+            HideActivationModelFooter();
+            var url = "/account/" + (action == "activate" ? "activate" : "deactivate");
+            $.ajax({
+                url: url,
+                method: "POST",
+                data: {
+                    id: id
+                },
+                success: function (response) {
+                    console.log(response);
+                    $("#modifyUserActivationModal").modal("hide");
+                    var statusSpan = GetStatusSpan();
+                    statusSpan.classList.toggle("fa-ban");
+                    statusSpan.classList.toggle("text-danger");
+                    statusSpan.classList.toggle("text-success");
+                    statusSpan.classList.toggle("fa-check");
+                    var statusBtn = GetActivationModBtn();
+                    statusBtn.children[0].classList.toggle("fa-user-slash");
+                    statusBtn.children[0].classList.toggle("fa-user-check");
+                    statusBtn.classList.toggle("btn-outline-success");
+                    statusBtn.classList.toggle("btn-outline-warning");
+                    statusBtn.onclick = function () {
+                        RiseActivationModal(action == "activate" ? "deactivate" : "activate", id);
+                    };
+                    statusBtn.setAttribute("title", action == "activate" ? "Desactivar usuario" : "Activar usuario");
+                },
+                error: function (response) {
+                    console.log(response);
+                    alert("Error en la operación: " + response);
+                }
+            });
+        }
+
+        function RiseDeleteModal(userId) {
+            id = userId;
+            var fullName = GetUserFullName();
+
+            var modalContent = document.getElementById("modal-delete-content");
+            modalText = modalDeleteContentTemplate.replace("{fullName}", fullName);
+            modalContent.innerHTML = modalText;
+
+            var btn = document.getElementById("modal-delete-btn-primary");
+            btn.onclick = SendDeleteUserRequest;
+            ShowDeleteModalFooter();
+            $("#deleteUserModal").modal();
+        }
+
+        function SendDeleteUserRequest() {
+            HideDeleteModalFooter();
+            $.ajax({
+                url: "/account/delete",
+                method: "DELETE",
+                data: {
+                    id: id
+                },
+                success: function (response) {
+                    console.log(response);
+                    GetUserRow().remove();
+                    $("#deleteUserModal").modal("hide");
+                }
+            });
+        }
+
+        function ShowDeleteModalFooter() {
+            SetDeleteModalFooterVisibility("flex");
+        }
+
+        function HideDeleteModalFooter() {
+            SetDeleteModalFooterVisibility("none");
+        }
+
+        function SetDeleteModalFooterVisibility(visibility) {
+            var modalFooter = document.getElementById("modal-delete-footer");
+            modalFooter.style.display = visibility;
+        }
+    </script>
 }

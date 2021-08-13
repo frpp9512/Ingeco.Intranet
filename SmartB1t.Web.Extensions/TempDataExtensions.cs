@@ -82,8 +82,8 @@ namespace SmartB1t.Web.Extensions
         /// <typeparam name="T">The type of the model.</typeparam>
         /// <param name="tempData">The TempData to be set up.</param>
         /// <param name="id">The identifier of the model.</param>
-        public static void SetModelUpdated<T>(this ITempDataDictionary tempData, int id)
-            => tempData.SetModelStatus<T, int>(TempDataAlertModelState.Updated, id);
+        public static void SetModelUpdated<T, I>(this ITempDataDictionary tempData, I id)
+            => tempData.SetModelStatus<T, I>(TempDataAlertModelState.Updated, id);
 
         /// <summary>
         /// Reads if exists a 'Updated' status for the specified Model.
