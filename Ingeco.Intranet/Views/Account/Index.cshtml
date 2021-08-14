@@ -7,10 +7,22 @@
 <h1>Administración de usuarios</h1>
 <hr />
 
-<a asp-action="Create" class="btn btn-success mb-3">
-    <span class="fa fa-plus"></span>
-    Crear nuevo
-</a>
+<div id="alert-container">
+
+</div>
+
+<div class="account-index-header" style="display:flex; flex-direction: row; justify-content:space-between;">
+    <div class="account-index-header-options">
+        <a asp-action="Create" class="btn btn-success mb-3">
+            <span class="fa fa-plus"></span>
+            Crear nuevo
+        </a>
+    </div>
+    <div>
+        <button class="btn btn-secondary" onclick="ShowAlert('Prueba de alerta', 'Texto de prueba de alerta')">Probar alerta</button>
+    </div>
+</div>
+
 
 @if (Model.UsersCount > 0)
 {
@@ -74,21 +86,25 @@
         </tbody>
     </table>
 
+    <!-- Pagination -->
     <nav aria-label="Navegación de usuarios" class="text-center">
-        <ul class="pagination justify-content-center">
-            <li class="page-item @(Model.FirstPage ? "disabled" : "")">
-                <a class="page-link" href="/account?page=@(Model.CurrentPage - 1)&usersPerPage=@Model.UsersPerPage" tabindex="-1"><span class="fa fa-arrow-alt-circle-left"></span> Anterior</a>
-            </li>
-            @for (int i = 0; i < Model.PagesCount; i++)
-            {
-                <li class="page-item @((i + 1) == Model.CurrentPage ? "disabled" : "")">
-                    <a class="page-link" href="/account?page=@(i + 1)&usersPerPage=@Model.UsersPerPage">@(i + 1)</a>
+        @if (Model.PagesCount > 1)
+        {
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(Model.FirstPage ? "disabled" : "")">
+                    <a class="page-link" href="/account?page=@(Model.CurrentPage - 1)&usersPerPage=@Model.UsersPerPage" tabindex="-1"><span class="fa fa-arrow-alt-circle-left"></span> Anterior</a>
                 </li>
-            }
-            <li class="page-item @(Model.LastPage ? "disabled" : "")">
-                <a class="page-link" href="/account?page=@(Model.CurrentPage + 1)&usersPerPage=@Model.UsersPerPage">Siguiente <span class="fa fa-arrow-alt-circle-right"></span></a>
-            </li>
-        </ul>
+                @for (int i = 0; i < Model.PagesCount; i++)
+                {
+                    <li class="page-item @((i + 1) == Model.CurrentPage ? "disabled" : "")">
+                        <a class="page-link" href="/account?page=@(i + 1)&usersPerPage=@Model.UsersPerPage">@(i + 1)</a>
+                    </li>
+                }
+                <li class="page-item @(Model.LastPage ? "disabled" : "")">
+                    <a class="page-link" href="/account?page=@(Model.CurrentPage + 1)&usersPerPage=@Model.UsersPerPage">Siguiente <span class="fa fa-arrow-alt-circle-right"></span></a>
+                </li>
+            </ul>
+        }
         <small class="text-muted">
             <span class="fa fa-pager"></span> Página @Model.CurrentPage de @Model.PagesCount | <span class="fa fa-users"></span> Mostrando @Model.Users.Count() de @Model.UsersCount usuarios
         </small>
@@ -147,153 +163,5 @@ else
 </div>
 
 @section Scripts {
-    <script>
-        var id = "";
-        var action = "";
-        var userFullName = "";
-        var modalActivationContentTemplate = "¿Está seguro que desea {action} al usuario {userName}?";
-        var modalDeleteContentTemplate = "¿Está seguro que desea eleminiar al usuario {fullName}?";
-
-        function GetUserRow() {
-            return document.getElementById(id);
-        }
-
-        function GetUserFullName() {
-            return GetUserRow().children[1].innerHTML;
-        }
-
-        function GetButtonsCell() {
-            return GetUserRow().children[5];
-        }
-
-        function GetStatusCell() {
-            return GetUserRow().children[4];
-        }
-
-        function GetActivationModBtn() {
-            return GetButtonsCell().children[0];
-        }
-
-        function GetStatusSpan() {
-            return GetStatusCell().children[0];
-        }
-
-        function GetActivationModalPrimeBtn() {
-            return document.getElementById("modal-activation-btn-primary");
-        }
-
-        function RiseActivationModal(action, userId) {
-            id = userId;
-            this.action = action;
-            // Get user full name
-            var row = GetUserRow();
-            userFullName = row.children[1].innerHTML.toString();
-
-            // Update modal title
-            var modalTitle = document.getElementById("modal-activation-title");
-            modalTitle.innerHTML = action == "activate" ? "Activar usuario" : "Desactivar usuario";
-
-            // Update modal content text
-            var modalContent = document.getElementById("modal-activation-content");
-            modalText = modalActivationContentTemplate.replace("{action}", action == "activation" ? "activar" : "desactivar")
-                .replace("{userName}", userFullName);
-            modalContent.innerHTML = modalText;
-
-            var modalPrimeBtn = GetActivationModalPrimeBtn();
-            modalPrimeBtn.onclick = SendActivationModRequest;
-
-            ShowActivationModalFooter();
-            $("#modifyUserActivationModal").modal();
-        }
-
-        function ShowActivationModalFooter() {
-            SetActivationModalFooterVisibility("flex");
-        }
-
-        function HideActivationModelFooter() {
-            SetActivationModalFooterVisibility("none");
-        }
-
-        function SetActivationModalFooterVisibility(visibility) {
-            var modalFooter = document.getElementById("modal-activation-footer");
-            modalFooter.style.display = visibility;
-        }
-
-        function SendActivationModRequest() {
-            HideActivationModelFooter();
-            var url = "/account/" + (action == "activate" ? "activate" : "deactivate");
-            $.ajax({
-                url: url,
-                method: "POST",
-                data: {
-                    id: id
-                },
-                success: function (response) {
-                    console.log(response);
-                    $("#modifyUserActivationModal").modal("hide");
-                    var statusSpan = GetStatusSpan();
-                    statusSpan.classList.toggle("fa-ban");
-                    statusSpan.classList.toggle("text-danger");
-                    statusSpan.classList.toggle("text-success");
-                    statusSpan.classList.toggle("fa-check");
-                    var statusBtn = GetActivationModBtn();
-                    statusBtn.children[0].classList.toggle("fa-user-slash");
-                    statusBtn.children[0].classList.toggle("fa-user-check");
-                    statusBtn.classList.toggle("btn-outline-success");
-                    statusBtn.classList.toggle("btn-outline-warning");
-                    statusBtn.onclick = function () {
-                        RiseActivationModal(action == "activate" ? "deactivate" : "activate", id);
-                    };
-                    statusBtn.setAttribute("title", action == "activate" ? "Desactivar usuario" : "Activar usuario");
-                },
-                error: function (response) {
-                    console.log(response);
-                    alert("Error en la operación: " + response);
-                }
-            });
-        }
-
-        function RiseDeleteModal(userId) {
-            id = userId;
-            var fullName = GetUserFullName();
-
-            var modalContent = document.getElementById("modal-delete-content");
-            modalText = modalDeleteContentTemplate.replace("{fullName}", fullName);
-            modalContent.innerHTML = modalText;
-
-            var btn = document.getElementById("modal-delete-btn-primary");
-            btn.onclick = SendDeleteUserRequest;
-            ShowDeleteModalFooter();
-            $("#deleteUserModal").modal();
-        }
-
-        function SendDeleteUserRequest() {
-            HideDeleteModalFooter();
-            $.ajax({
-                url: "/account/delete",
-                method: "DELETE",
-                data: {
-                    id: id
-                },
-                success: function (response) {
-                    console.log(response);
-                    GetUserRow().remove();
-                    $("#deleteUserModal").modal("hide");
-                }
-            });
-        }
-
-        function ShowDeleteModalFooter() {
-            SetDeleteModalFooterVisibility("flex");
-        }
-
-        function HideDeleteModalFooter() {
-            SetDeleteModalFooterVisibility("none");
-        }
-
-        function SetDeleteModalFooterVisibility(visibility) {
-            var modalFooter = document.getElementById("modal-delete-footer");
-            modalFooter.style.display = visibility;
-        }
-    </script>
+    <script src="~/js/account-index.js"></script>
 }

@@ -16,6 +16,7 @@ namespace Ingeco.Intranet.Models
 
         [Required(ErrorMessage = "Debe de escribir correctamente la contraseña para iniciar sesión.")]
         [Display(Name = "Contraseña", Prompt = "Contraseña", Description = "La contraseña usada para el inicio de sesión.")]
+        [DataType(DataType.Password)]
         public string Password { get; set; }
 
         [Display(Name = "Recordar sesión", Prompt = "Recordar sesión", Description = "Define si el inicio sesión va a ser persistente (no expirará).")]
