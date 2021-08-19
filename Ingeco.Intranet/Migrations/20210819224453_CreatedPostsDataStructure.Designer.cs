@@ -3,15 +3,17 @@ using System;
 using Ingeco.Intranet.Data.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Ingeco.Intranet.Migrations
 {
     [DbContext(typeof(WebDataContext))]
-    partial class WebDataContextModelSnapshot : ModelSnapshot
+    [Migration("20210819224453_CreatedPostsDataStructure")]
+    partial class CreatedPostsDataStructure
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

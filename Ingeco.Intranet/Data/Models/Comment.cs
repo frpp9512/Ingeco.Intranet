@@ -43,6 +43,11 @@ namespace Ingeco.Intranet.Data.Models
         public Comment RepliedTo { get; set; }
 
         /// <summary>
+        /// The set of replies to this comment.
+        /// </summary>
+        public IEnumerable<Comment> Replies { get; set; }
+
+        /// <summary>
         /// The identifier of the post which the post belongs to.
         /// </summary>
         public Guid PostId { get; set; }

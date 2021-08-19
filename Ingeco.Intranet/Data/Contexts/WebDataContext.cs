@@ -40,7 +40,7 @@ namespace Ingeco.Intranet.Data.Contexts
         /// <summary>
         /// The database set storing the <see cref="Category"/> recrods.
         /// </summary>
-        public DbSet<Category> PostCategories { get; set; }
+        public DbSet<Category> Categories { get; set; }
 
         /// <summary>
         /// The database set storing the <see cref="WebMedia"/> records.
@@ -117,6 +117,12 @@ namespace Ingeco.Intranet.Data.Contexts
                         .HasOne(r => r.Post)
                         .WithMany(p => p.Visits)
                         .HasForeignKey(r => r.PostId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Comment>()
+                        .HasMany(c => c.Replies)
+                        .WithOne(c => c.RepliedTo)
+                        .HasForeignKey(c => c.RepliedToId)
                         .OnDelete(DeleteBehavior.Cascade);
 
             #endregion
