@@ -25,7 +25,6 @@ namespace Ingeco.Intranet
         {
             services.AddDbContext<WebDataContext>(options => options.UseNpgsql(Configuration.GetConnectionString("Default")));
             services.AddScoped<IAccountSecurityRepository, AccountSecurityRepository>();
-
             services.AddAuthentication(Constants.AUTH_SCHEME)
                     .AddCookie(Constants.AUTH_SCHEME, config => 
                     {

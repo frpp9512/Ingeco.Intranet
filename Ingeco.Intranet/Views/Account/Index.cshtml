@@ -8,7 +8,10 @@
 <hr />
 
 <div id="alert-container">
+    @if (TempData.ModelCreated)
+    {
 
+    }
 </div>
 
 <div class="account-index-header" style="display:flex; flex-direction: row; justify-content:space-between;">
@@ -18,9 +21,9 @@
             Crear nuevo
         </a>
     </div>
-    <div>
+    @*<div>
         <button class="btn btn-secondary" onclick="ShowAlert('Prueba de alerta', 'Texto de prueba de alerta')">Probar alerta</button>
-    </div>
+    </div>*@
 </div>
 
 
@@ -74,6 +77,9 @@
                                 <span class="fa fa-user-check"></span>
                             </button>
                         }
+                        <a class="btn btn-info" asp-action="ChangePassword" asp-route-id="@u.Id.ToString()" title="Cambiar contraseña">
+                            <span class="fa fa-asterisk"></span>
+                        </a>
                         <a class="btn btn-success" asp-action="Edit" asp-route-id="@u.Id.ToString()" title="Editar usuario">
                             <span class="fa fa-user-edit"></span>
                         </a>

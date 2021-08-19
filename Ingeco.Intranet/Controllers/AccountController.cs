@@ -16,11 +16,12 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Ingeco.Intranet.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class AccountController : Controller
     {
         #region Private members
@@ -107,6 +108,7 @@ namespace Ingeco.Intranet.Controllers
         #region Management
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> IndexAsync(int page = 1, int usersPerPage = 5, bool includeInactive = true)
         {
             RemoveTempDirectory();
@@ -146,6 +148,7 @@ namespace Ingeco.Intranet.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateAsync()
         {
             RemoveTempDirectory();
@@ -222,6 +225,7 @@ namespace Ingeco.Intranet.Controllers
             Description = r.Description
         });
 
+        [Authorize(Roles = "Admin")]
         [RequestFormLimits(MultipartBodyLengthLimit = 5242880)]
         [RequestSizeLimit(5242880)]
         public async Task<IActionResult> UploadTempUserPhoto(IFormFile profilephoto)
@@ -249,6 +253,8 @@ namespace Ingeco.Intranet.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin")]
+        [HttpGet]
         public FileStreamResult ProfileTempPhoto(string fileId)
         {
             string fileName = Path.Combine(_profileTmpFolder, $"{fileId}.jpg");
@@ -260,6 +266,7 @@ namespace Ingeco.Intranet.Controllers
             };
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> EditAsync(string id)
         {
@@ -275,6 +282,7 @@ namespace Ingeco.Intranet.Controllers
             return View(vm);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditAsync(EditUserViewModel viewModel)
@@ -337,6 +345,7 @@ namespace Ingeco.Intranet.Controllers
             return View();
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Activate(string id)
         {
@@ -350,6 +359,7 @@ namespace Ingeco.Intranet.Controllers
             return Ok($"El usuario {user.Fullname} ha sido activado satisfactoriamente.");
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Deactivate(string id)
         {
@@ -363,6 +373,7 @@ namespace Ingeco.Intranet.Controllers
             return Ok($"El usuario {user.Fullname} ha sido desactivado satisfactoriamente.");
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete]
         public async Task<IActionResult> Delete(string id)
         {
@@ -375,6 +386,57 @@ namespace Ingeco.Intranet.Controllers
             user.Active = false;
             _repository.UpdateUserAsync(user).Wait();
             return Ok($"El usuario {user.Fullname} ha sido eliminado satisfactoriamente.");
+        }
+        
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> ChangePasswordAsync(string id = "")
+        {
+            ChangePasswordViewModel viewModel;
+            if (!string.IsNullOrEmpty(id) && User.IsInRole("Admin"))
+            {
+                var user = await _repository.GetUserAsync(new Guid(id));
+                if (user is null)
+                {
+                    return BadRequest("El usuario no existe.");
+                }
+                viewModel = new()
+                {
+                    Id = user.Id.ToString(),
+                    Fullname = user.Fullname,
+                    Email = user.Email,
+                    AllowChangeEmail = false
+                };
+            }
+            else
+            {
+                viewModel = new()
+                {
+                    Id = User.Claims.First(u => u.Type == ClaimTypes.NameIdentifier).Value,
+                    Email = User.Claims.First(u => u.Type == ClaimTypes.Email).Value,
+                    Fullname = User.Claims.First(u => u.Type == ClaimTypes.Name).Value,
+                    AllowChangeEmail = true
+                };
+            }
+            return View(viewModel);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePasswordAsync(ChangePasswordViewModel viewModel)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _repository.GetUserAsync(new Guid(viewModel.Id));
+                if (user is null)
+                {
+                    return BadRequest("El usuario no existe.");
+                }
+                _repository.SetUserPasswordAsync(user, viewModel.Password).Wait();
+                return Redirect("/");
+            }
+            return View(viewModel);
         }
 
         #endregion
