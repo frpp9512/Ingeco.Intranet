@@ -1,0 +1,119 @@
+﻿@model Ingeco.Intranet.Models.CategoriesIndexViewModel
+@using SmartB1t.Web.Extensions
+@{
+    ViewData["Title"] = "Categorías";
+}
+
+<div id="alert-container">
+    @if (TempData.WasModelCreated<CategoryViewModel>(out Guid createdId))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong><span class="fa fa-plus-circle"></span> Categoría creada</strong> Se ha creado una nueva categoría satisfactoriamente.
+            <button type='button' class='close' data-dismiss='alert' aria-label='Close'>
+                <span aria-hidden='true'>&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData.WasModelUpdated<CategoryViewModel>(out Guid updatedId))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong><span class="fa fa-pencil-alt"></span> Categoría actualizada</strong> Se ha editado la categoría satisfactoriamente.
+            <button type='button' class='close' data-dismiss='alert' aria-label='Close'>
+                <span aria-hidden='true'>&times;</span>
+            </button>
+        </div>
+    }
+</div>
+
+<h1>Categorías</h1>
+<p>Los principales temas a tratar agrupados en cada categoría.</p>
+<hr />
+
+<a asp-action="Create" class="btn btn-success mb-3">
+    <span class="fa fa-plus"></span> Crear nueva
+</a>
+
+@if (Model.Categories?.Count() == 0)
+{
+    <div class="no-items-notification">
+        <p>No existen categorías registradas en el sistema</p>
+        <div>
+            <a asp-action="Create" class="btn btn-success">
+                <span class="fa fa-plus-circle"></span> Crear nueva
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th title="Nombre de la categoría">
+                    Nombre de categoría
+                </th>
+                <th title="Descripción">
+                    Descripción
+                </th>
+                <th class="text-center" title="Cantidad de publicaciones">
+                    Cant. de publicaciones
+                </th>
+                <th title="Acciones" class="text-center">
+
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var cat in Model.Categories)
+            {
+                <tr id="@cat.Id">
+                    <td>@cat.Name</td>
+                    <td>@cat.Description</td>
+                    <td class="text-center">
+                        @cat.PostsCount
+                    </td>
+                    <td class="text-center">
+                        <a asp-action="Edit" asp-route-id="@cat.Id" class="btn btn-success" title="Editar categoría">
+                            <span class="fa fa-pencil-alt"></span>
+                        </a>
+                        <button class="btn btn-danger" onclick="RemoveCategory('@cat.Id.ToString()')" title="Eliminar categoría">
+                            <span class="fa fa-trash"></span>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="text-center">
+        <hr />
+        <small class="text-muted">Total de cateogrías: <span id="categoriesTotal">@Model.CategoriesTotal</span></small>
+    </div>
+}
+
+<!-- Delete category modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" role="dialog" aria-labelledby="deleteCategoryModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-delete-title"><span class="fa fa-trash"></span> Eliminar categoría</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="modal-delete-content" class="modal-body">
+
+            </div>
+            <div class="modal-footer" id="modal-delete-footer">
+                <button type="button" id="modal-delete-btn-primary" class="btn btn-danger"><span class="fa fa-trash"></span> Eliminar</button>
+                <button type="button" id="model-delete-btn-secondary" class="btn btn-secondary" data-dismiss="modal"><span class="fa fa-ban"></span> Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script src="~/js/categories-index.js"></script>
+}

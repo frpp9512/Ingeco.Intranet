@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 namespace Ingeco.Intranet.Controllers
 {
     [Authorize]
-    public class AccountController : Controller
+    public class AccountsController : Controller
     {
         #region Private members
 
@@ -35,7 +35,7 @@ namespace Ingeco.Intranet.Controllers
 
         #region Constructor
 
-        public AccountController(IAccountSecurityRepository repository, IWebHostEnvironment hostEnvironment)
+        public AccountsController(IAccountSecurityRepository repository, IWebHostEnvironment hostEnvironment)
         {
             _repository = repository;
             _hostEnvironment = hostEnvironment;

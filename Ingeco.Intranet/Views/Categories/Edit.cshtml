@@ -1,0 +1,38 @@
+﻿@model Ingeco.Intranet.Models.CategoryViewModel
+
+@{
+    ViewData["Title"] = "Editar categoría";
+}
+
+<h1>Editar categoría</h1>
+
+<h4>Actulice los datos de la categoría.</h4>
+<hr />
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Name" class="control-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Description" class="control-label"></label>
+                <input asp-for="Description" class="form-control" />
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input asp-for="Id" class="form-control" type="hidden" />
+            </div>
+            <div class="form-footer mt-5">
+                <a asp-action="Index"><span class="fa fa-arrow-alt-circle-left">
+                     </span> Regresar al listado
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <span class="fa fa-pencil-alt"></span> Editar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

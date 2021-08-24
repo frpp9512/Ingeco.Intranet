@@ -62,16 +62,16 @@ namespace SmartB1t.Web.Extensions
         /// <param name="tempData">The TempData to be set up.</param>
         /// <param name="id">The id of the <typeparamref name="T"/> model if exists it status, otherwise -1.</param>
         /// <returns>If the status exists returns the identifier of the Model, otherwise -1.</returns>
-        public static bool WasModelCreated<T>(this ITempDataDictionary tempData, out int id)
+        public static bool WasModelCreated<T>(this ITempDataDictionary tempData, out Guid id)
         {
             try
             {
-                id = tempData.ReadModelStatus<T, int>(TempDataAlertModelState.Created);
+                id = tempData.ReadModelStatus<T, Guid>(TempDataAlertModelState.Created);
                 return true;
             }
             catch (Exception)
             {
-                id = -1;
+                id = new Guid();
                 return false;
             }
         }
@@ -92,16 +92,16 @@ namespace SmartB1t.Web.Extensions
         /// <param name="tempData">The TempData to be set up.</param>
         /// <param name="id">The id of the <typeparamref name="T"/> model if exists it status, otherwise -1.</param>
         /// <returns><see langword="true"/> if the status of the model exists.</returns>
-        public static bool WasModelUpdated<T>(this ITempDataDictionary tempData, out int id)
+        public static bool WasModelUpdated<T>(this ITempDataDictionary tempData, out Guid id)
         {
             try
             {
-                id = tempData.ReadModelStatus<T, int>(TempDataAlertModelState.Updated);
+                id = tempData.ReadModelStatus<T, Guid>(TempDataAlertModelState.Updated);
                 return true;
             }
             catch (Exception)
             {
-                id = -1;
+                id = new Guid();
                 return false;
             }
         }

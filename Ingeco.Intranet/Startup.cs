@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using SmartB1t.Security.WebSecurity.Local.Interfaces;
 using Ingeco.Intranet.Data.Repositories;
 using Ingeco.Intranet.Data.Models;
+using Ingeco.Intranet.Data.Interfaces;
 
 namespace Ingeco.Intranet
 {
@@ -25,6 +26,7 @@ namespace Ingeco.Intranet
         {
             services.AddDbContext<WebDataContext>(options => options.UseNpgsql(Configuration.GetConnectionString("Default")));
             services.AddScoped<IAccountSecurityRepository, AccountSecurityRepository>();
+            services.AddScoped<IPostsManagementRepository, PostsManagementRepository>();
             services.AddAuthentication(Constants.AUTH_SCHEME)
                     .AddCookie(Constants.AUTH_SCHEME, config => 
                     {

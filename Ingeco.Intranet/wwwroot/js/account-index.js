@@ -41,7 +41,7 @@ function RiseActivationModal(action, userId) {
 
     // Update modal title
     var modalTitle = document.getElementById("modal-activation-title");
-    modalTitle.innerHTML = action == "activate" ? "Activar usuario" : "Desactivar usuario";
+    modalTitle.innerHTML = action === "activate" ? "Activar usuario" : "Desactivar usuario";
 
     // Update modal content text
     var modalContent = document.getElementById("modal-activation-content");
@@ -71,7 +71,7 @@ function SetActivationModalFooterVisibility(visibility) {
 
 function SendActivationModRequest() {
     HideActivationModelFooter();
-    var url = "/account/" + (action == "activate" ? "activate" : "deactivate");
+    var url = "/accounts/" + (action === "activate" ? "activate" : "deactivate");
     $.ajax({
         url: url,
         method: "POST",
@@ -121,7 +121,7 @@ function RiseDeleteModal(userId) {
 function SendDeleteUserRequest() {
     HideDeleteModalFooter();
     $.ajax({
-        url: "/account/delete",
+        url: "/accounts/delete",
         method: "DELETE",
         data: {
             id: id
