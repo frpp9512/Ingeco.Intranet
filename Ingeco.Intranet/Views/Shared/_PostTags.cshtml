@@ -1,0 +1,21 @@
+﻿@model string[]
+
+<div class="post-tags mt-3">
+
+    <div class="post-tags-title">
+        <span class="fa fa-tags"></span> Etiquetas:
+    </div>
+    @if (Model.Length > 0)
+    {
+        @foreach (var tag in Model)
+        {
+            <a asp-action="Tag" asp-route-tag="@tag" class="btn-link">
+                <span class="badge badge-info">@tag</span>
+            </a>
+        }
+    }
+    else
+    {
+        <i>Esta publicación no tiene asignada etiquetas.</i>
+    }
+</div>

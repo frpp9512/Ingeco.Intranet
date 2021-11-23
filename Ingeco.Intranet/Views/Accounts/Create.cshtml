@@ -1,0 +1,127 @@
+﻿@model Ingeco.Intranet.Models.CreateUserViewModel
+
+@{
+    ViewData["Title"] = "Nuevo usuario";
+}
+
+<h1><span class="fas fa-user-circle"></span> Nuevo usuario</h1>
+
+<h4>Rellene debidamente el formulario para registrar el nuevo usuario.</h4>
+<hr />
+<form asp-action="Create" enctype="multipart/form-data">
+    <div class="row justify-content-center">
+        <div class="col col-lg-5 col-md-7 col-12">
+            <div id="pic-preview" class="profile-pic-preview">
+                <img src="/accounts/profiletempphoto@(!string.IsNullOrEmpty(Model.ProfilePictureId) ? $"?fileId={Model.ProfilePictureId}" : "")" id="profile-pic-preview" alt="Foto de perfil del usuario" />
+            </div>
+            <div class="form-group">
+                <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="profile-photo-upload"><span class="fa fa-image"></span></span>
+                    </div>
+                    <div class="custom-file overflow-hidden">
+                        <input type="file" accept="image/jpg" class="custom-file-input" id="profilephoto" name="profilephoto" aria-describedby="profile-photo-upload">
+                        <label id="profile-pic-filename" class="custom-file-label" for="profile-photo">@(!string.IsNullOrEmpty(Model.ProfilePictureFileName) ? Model.ProfilePictureFileName : "Elegir foto")</label>
+                    </div>
+                </div>
+                <small class="form-text text-muted mt-n3">
+                    La imágen no debe de ser mayor (1000x1000)px. <span id="upload-indicator" class="badge badge-info collapse"><span class="fa fa-upload"></span> Subiendo fichero...</span>
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div asp-validation-summary="All" class="text-danger"></div>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="form-group">
+                <label asp-for="Fullname" class="control-label"></label>
+                <input asp-for="Fullname" class="form-control" />
+                <span asp-validation-for="Fullname" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Position" class="control-label"></label>
+                <input asp-for="Position" class="form-control" />
+                <span asp-validation-for="Position" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Department" class="control-label"></label>
+                <input asp-for="Department" class="form-control" />
+                <span asp-validation-for="Department" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label asp-for="Email" class="control-label"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Password" class="control-label"></label>
+                <input asp-for="Password" class="form-control" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="ConfirmPassword" class="control-label"></label>
+                <input asp-for="ConfirmPassword" class="form-control" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center mt-3">
+        <div class="col-md-8">
+            @if (Model.RoleList.Count() > 0)
+            {
+                <h5>Roles a despempeñar</h5>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <td>Nombre</td>
+                            <td>Descripción</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var role in Model.RoleList)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="RolesSelected" value="@role.Id" @(Model.RolesSelected?.Any(r => r == role.Id.ToString()) == true ? "checked" : "") />
+                                        <label class="form-check-label" for="RolesSelected">
+                                            @role.Name
+                                        </label>
+                                    </div>
+                                </td>
+                                <td>
+                                    @role.Description
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-8">
+            <div class="form-footer">
+                <a asp-action="Index" class="btn btn-outline-info"><span class="fa fa-arrow-alt-circle-left"></span> Regresar al listado</a>
+                <input asp-for="ProfilePictureId" type="hidden" />
+                <input asp-for="ProfilePictureFileName" type="hidden" />
+                <div class="form-group justify-content-end">
+                    <input type="submit" value="Crear usuario" class="btn btn-primary" />
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/lib/jquery.ajaxfileupload.js"></script>
+    <script src="~/js/create-user.js"></script>
+}

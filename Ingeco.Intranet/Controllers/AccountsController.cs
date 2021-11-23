@@ -16,6 +16,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -30,6 +31,7 @@ namespace Ingeco.Intranet.Controllers
         private readonly IWebHostEnvironment _hostEnvironment;
         private readonly string _profileTmpFolder;
         private readonly string _profileDefaultPath;
+        private readonly string _profilePictureFileName;
 
         #endregion
 
@@ -41,6 +43,7 @@ namespace Ingeco.Intranet.Controllers
             _hostEnvironment = hostEnvironment;
             _profileTmpFolder = Path.Combine(_hostEnvironment.WebRootPath, "img", "tmp");
             _profileDefaultPath = Path.Combine(_hostEnvironment.WebRootPath, "img", "layout", "default-profile-pic.jpg");
+            _profilePictureFileName = Path.Combine(_hostEnvironment.WebRootPath, "img", "loggedUser", "user.jpg");
         }
 
         #endregion
@@ -49,7 +52,7 @@ namespace Ingeco.Intranet.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult Login(string returnUrl)
+        public IActionResult Login(string returnUrl = "/")
         {
             return View(model: new LoginViewModel { ReturnUrl = returnUrl });
         }
@@ -69,6 +72,8 @@ namespace Ingeco.Intranet.Controllers
                         if (await _repository.AuthenticateUser(user, viewModel.Password))
                         {
                             await user.SignInAsync(HttpContext, Constants.AUTH_SCHEME, viewModel.RememberSession);
+                            using var fileStream = new FileStream(_profilePictureFileName, FileMode.Create);
+                            await fileStream.WriteAsync(user.ProfilePicture);
                             return !string.IsNullOrEmpty(viewModel.ReturnUrl) ? Redirect(viewModel.ReturnUrl) : Redirect("/");
                         }
                         else
@@ -86,13 +91,17 @@ namespace Ingeco.Intranet.Controllers
                     ModelState.AddModelError("Usuario desconocido", "El usuario no existe.");
                 }
             }
-            return Redirect(viewModel.ReturnUrl);
+            return View(viewModel);
         }
 
         [Authorize]
         public async Task<IActionResult> LogoutAsync(string returnUrl = "/")
         {
             await HttpContext.SignOutAsync();
+            if (System.IO.File.Exists(_profilePictureFileName))
+            {
+                System.IO.File.Delete(_profilePictureFileName);
+            }
             return RedirectPermanent(returnUrl);
         }
 
@@ -108,7 +117,6 @@ namespace Ingeco.Intranet.Controllers
         #region Management
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> IndexAsync(int page = 1, int usersPerPage = 5, bool includeInactive = true)
         {
             RemoveTempDirectory();
@@ -129,9 +137,8 @@ namespace Ingeco.Intranet.Controllers
             {
                 if (user.ProfilePicture is not null)
                 {
-                    using var stream = new MemoryStream(user.ProfilePicture);
-                    var image = Image.FromStream(stream);
-                    image.Save(GetTempPhotoPath(user.Id.ToString()), ImageFormat.Jpeg);
+                    using var fileStream = new FileStream(GetTempPhotoPath(user.Id.ToString()), FileMode.Create);
+                    await fileStream.WriteAsync(user.ProfilePicture);
                 }
             }
 
@@ -148,7 +155,6 @@ namespace Ingeco.Intranet.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateAsync()
         {
             RemoveTempDirectory();
@@ -176,11 +182,10 @@ namespace Ingeco.Intranet.Controllers
 
                 if (!string.IsNullOrEmpty(viewModel.ProfilePictureId) && ExistsTempPhoto(viewModel.ProfilePictureId))
                 {
-                    var image = Image.FromFile(GetTempPhotoPath(viewModel.ProfilePictureId));
+                    using var stream = new FileStream(GetTempPhotoPath(viewModel.ProfilePictureId), FileMode.Open);
                     using var memStream = new MemoryStream();
-                    image.Save(memStream, ImageFormat.Jpeg);
+                    stream.CopyTo(memStream);
                     user.ProfilePicture = memStream.ToArray();
-                    image.Dispose();
                 }
 
                 if (viewModel.RolesSelected.Length > 0)
@@ -211,21 +216,20 @@ namespace Ingeco.Intranet.Controllers
             return View(viewModel);
         }
 
-        private bool ExistsTempPhoto(string fileId) 
+        private bool ExistsTempPhoto(string fileId)
             => System.IO.File.Exists(GetTempPhotoPath(fileId));
 
-        private string GetTempPhotoPath(string fileId) 
+        private string GetTempPhotoPath(string fileId)
             => Path.Combine(_profileTmpFolder, $"{fileId}.jpg");
 
-        private static IEnumerable<RoleViewModel> GetRoleViewModels(IEnumerable<Role> roles) 
+        private static IEnumerable<RoleViewModel> GetRoleViewModels(IEnumerable<Role> roles)
             => roles.Select(r => new RoleViewModel
-        {
-            Id = r.Id,
-            Name = r.Name,
-            Description = r.Description
-        });
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Description = r.Description
+            });
 
-        [Authorize(Roles = "Admin")]
         [RequestFormLimits(MultipartBodyLengthLimit = 5242880)]
         [RequestSizeLimit(5242880)]
         public async Task<IActionResult> UploadTempUserPhoto(IFormFile profilephoto)
@@ -238,7 +242,7 @@ namespace Ingeco.Intranet.Controllers
                 using var file = new FileStream(fileName, FileMode.Create);
                 await profilephoto.CopyToAsync(file);
                 return System.IO.File.Exists(fileName)
-                    ? Ok(new { url = $"{Url.Action("ProfileTempPhoto")}?fileId={fileId}", fileId })
+                    ? Ok(new { url = $"{Url.Action("ProfileTempPhoto", "Accounts")}?fileId={fileId}", fileId })
                     : BadRequest("Error creando fichero en el servidor.");
             }
             return BadRequest(new { errorMessage = "Error no esperado." });
@@ -253,8 +257,6 @@ namespace Ingeco.Intranet.Controllers
             }
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpGet]
         public FileStreamResult ProfileTempPhoto(string fileId)
         {
             string fileName = Path.Combine(_profileTmpFolder, $"{fileId}.jpg");
@@ -266,23 +268,55 @@ namespace Ingeco.Intranet.Controllers
             };
         }
 
-        [Authorize(Roles = "Admin")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ProfilePictureAsync(string id)
+        {
+            byte[] pictureBytes;
+            if (id is null)
+            {
+                if (User.Identity.IsAuthenticated)
+                {
+                    pictureBytes = System.IO.File.ReadAllBytes(_profilePictureFileName);
+                }
+                else
+                {
+                    return BadRequest("Debe de específicar un id de usuario o estar autenticado.");
+                }
+            }
+            else
+            {
+                var user = await _repository.GetUserAsync(new Guid(id));
+                if (user is null)
+                {
+                    return BadRequest("No existe el usuario con el id específicado.");
+                }
+                pictureBytes = user.ProfilePicture;
+                if (pictureBytes is null)
+                {
+                    pictureBytes = System.IO.File.ReadAllBytes(_profileDefaultPath);
+                }
+            }
+            return new FileStreamResult(new MemoryStream(pictureBytes), new MediaTypeHeaderValue("image/jpeg"))
+            {
+                FileDownloadName = "Profile.jpg"
+            };
+        }
+
         [HttpGet]
         public async Task<IActionResult> EditAsync(string id)
         {
+            RemoveTempDirectory();
             var user = await _repository.GetUserAsync(new Guid(id), true);
             var vm = user.GetEditViewModel();
             vm.RoleList = await GetRoleViewModelsAsync();
             if (user.ProfilePicture is not null)
             {
-                using var stream = new MemoryStream(user.ProfilePicture);
-                var image = Image.FromStream(stream);
-                image.Save(GetTempPhotoPath(user.Id.ToString()), ImageFormat.Jpeg);
+                using var stream = new FileStream(GetTempPhotoPath(user.Id.ToString()), FileMode.Create);
+                await stream.WriteAsync(user.ProfilePicture);
             }
             return View(vm);
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditAsync(EditUserViewModel viewModel)
@@ -291,15 +325,14 @@ namespace Ingeco.Intranet.Controllers
             {
                 var user = await _repository.GetUserAsync(new Guid(viewModel.Id), true);
 
-                if (viewModel.ProfilePictureId != user.Id.ToString() 
-                    && !string.IsNullOrEmpty(viewModel.ProfilePictureId) 
+                if (viewModel.ProfilePictureId != user.Id.ToString()
+                    && !string.IsNullOrEmpty(viewModel.ProfilePictureId)
                     && ExistsTempPhoto(viewModel.ProfilePictureId))
                 {
-                    var image = Image.FromFile(GetTempPhotoPath(viewModel.ProfilePictureId));
+                    using var stream = new FileStream(GetTempPhotoPath(viewModel.ProfilePictureId), FileMode.Open);
                     using var memStream = new MemoryStream();
-                    image.Save(memStream, ImageFormat.Jpeg);
+                    await stream.CopyToAsync(memStream);
                     user.ProfilePicture = memStream.ToArray();
-                    image.Dispose();
                 }
 
                 user.Fullname = viewModel.Fullname;
@@ -339,13 +372,12 @@ namespace Ingeco.Intranet.Controllers
                 {
                     ModelState.AddModelError("NoRolesSelected", "No se ha seleccionado ningún rol a desempeñar por el usuario.");
                 }
-                
+
             }
             viewModel.RoleList = await GetRoleViewModelsAsync();
             return View();
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Activate(string id)
         {
@@ -359,7 +391,6 @@ namespace Ingeco.Intranet.Controllers
             return Ok($"El usuario {user.Fullname} ha sido activado satisfactoriamente.");
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Deactivate(string id)
         {
@@ -373,7 +404,6 @@ namespace Ingeco.Intranet.Controllers
             return Ok($"El usuario {user.Fullname} ha sido desactivado satisfactoriamente.");
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpDelete]
         public async Task<IActionResult> Delete(string id)
         {
@@ -386,57 +416,6 @@ namespace Ingeco.Intranet.Controllers
             user.Active = false;
             _repository.UpdateUserAsync(user).Wait();
             return Ok($"El usuario {user.Fullname} ha sido eliminado satisfactoriamente.");
-        }
-        
-        [Authorize]
-        [HttpGet]
-        public async Task<IActionResult> ChangePasswordAsync(string id = "")
-        {
-            ChangePasswordViewModel viewModel;
-            if (!string.IsNullOrEmpty(id) && User.IsInRole("Admin"))
-            {
-                var user = await _repository.GetUserAsync(new Guid(id));
-                if (user is null)
-                {
-                    return BadRequest("El usuario no existe.");
-                }
-                viewModel = new()
-                {
-                    Id = user.Id.ToString(),
-                    Fullname = user.Fullname,
-                    Email = user.Email,
-                    AllowChangeEmail = false
-                };
-            }
-            else
-            {
-                viewModel = new()
-                {
-                    Id = User.Claims.First(u => u.Type == ClaimTypes.NameIdentifier).Value,
-                    Email = User.Claims.First(u => u.Type == ClaimTypes.Email).Value,
-                    Fullname = User.Claims.First(u => u.Type == ClaimTypes.Name).Value,
-                    AllowChangeEmail = true
-                };
-            }
-            return View(viewModel);
-        }
-
-        [Authorize]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangePasswordAsync(ChangePasswordViewModel viewModel)
-        {
-            if (ModelState.IsValid)
-            {
-                var user = await _repository.GetUserAsync(new Guid(viewModel.Id));
-                if (user is null)
-                {
-                    return BadRequest("El usuario no existe.");
-                }
-                _repository.SetUserPasswordAsync(user, viewModel.Password).Wait();
-                return Redirect("/");
-            }
-            return View(viewModel);
         }
 
         #endregion

@@ -1,0 +1,58 @@
+﻿@model IEnumerable<PostViewModel>
+
+<div class="posts-container">
+    @if (Model.Any())
+    {
+        foreach (var post in Model.Where(p => p.Media?.Any() is true))
+        {
+            var lapse = DateTime.Now - post.Created;
+            var dateToShow = post.Created.ToString("dd/MM/yyyy h:mm tt");
+            if (lapse.Days == 0)
+            {
+                if (lapse.Hours == 0)
+                {
+                    if (lapse.Minutes < 3)
+                    {
+                        dateToShow = "Hace un momento";
+                    }
+                    else
+                    {
+                        dateToShow = $"Hace {lapse.Minutes} minutos";
+                    }
+                }
+                else
+                {
+                    dateToShow = $"Hace {lapse.Hours} hora{(lapse.Hours > 1 ? "s" : "")}";
+                }
+            }
+            else
+            {
+                if (lapse.Days <= 3)
+                {
+                    dateToShow = $"Hace {lapse.Days} día{(lapse.Days > 1 ? "s" : "")}";
+                }
+            }
+            <a asp-action="Index" asp-controller="Posts" asp-route-id="@post.Id" class="post-link">
+                <div class="post-card" style="background-image: url('/posts/media?id=@post.Cover.Id.ToString()')">
+                    <div class="post-card-contentback"></div>
+                    <div class="post-card-content">
+                        <div class="post-card-details">
+                            <span>@post.Category.Name</span>
+                            <span>@dateToShow</span>
+                        </div>
+                        <div class="post-card-title">@post.Title</div>
+                    </div>
+                </div>
+            </a>
+        }
+    }
+    else
+    {
+        <div class="post-list-empty">
+            <span class="fa fa-newspaper"></span> No hay publicaciones recientes
+            <br/>
+            <br/>
+            <a asp-action="Create" asp-controller="Posts" class="btn-light-rounded"><span class="fa fa-plus-circle"></span> Crear nueva</a>
+        </div>
+    }
+</div>

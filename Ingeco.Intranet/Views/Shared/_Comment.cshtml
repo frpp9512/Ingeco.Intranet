@@ -1,0 +1,27 @@
+﻿@model CommentViewModel
+
+<div class="media comment mt-3" id="@Model.Id">
+    <img src="/accounts/profilepicture?id=@Model.User.Id" class="mr-3" alt="" width="50">
+    <div class="media-body">
+        <h5 class="mt-0">@Model.User.Fullname</h5>
+        @Model.Text
+    <div class="comment-options">
+        <span>Publicado: @Model.Created.DateTime.ToShortDateString() - @Model.Created.DateTime.ToShortTimeString()</span>
+        @if ((Model.Replies == null || Model.Replies?.Any() == false) && Model.HasReplies)
+        {
+            <span class="ml-2"><button type="button" class="btn btn-link loadRepliesBtn" onclick="LoadRepliesFor('@Model.Id.ToString()')"><span class="fa fa-list"></span> Respuestas (@Model.TotalRepliesCount)</button></span>
+        }
+        @if (User.Identity.IsAuthenticated)
+        {
+            <span><button type="button" class="btn btn-link" onclick="ReplyTo('@Model.Id.ToString()')"><span class="fa fa-reply"></span> Responder</button></span>
+        }
+    </div>
+        @if (Model.Replies?.Any() == true)
+        {
+            foreach (var reply in Model.Replies)
+            {
+                <partial name="_Comment" model="reply" />
+            }
+        }
+    </div>
+</div>

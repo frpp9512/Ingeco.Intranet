@@ -35,7 +35,7 @@ namespace Ingeco.Intranet.Data.Models
         /// <summary>
         /// The identifier of the comment that is replied.
         /// </summary>
-        public Guid RepliedToId { get; set; }
+        public Guid? RepliedToId { get; set; }
 
         /// <summary>
         /// The comment replied.

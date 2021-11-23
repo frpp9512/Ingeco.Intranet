@@ -92,7 +92,7 @@ namespace Ingeco.Intranet.Data.Repositories
         public async Task<User> GetUserAsync(string email, bool loadUserRoles = false)
         {
             var user = await _dataContext.Users.FirstOrDefaultAsync(u => u.Email == email);
-            if (loadUserRoles)
+            if (user is not null && loadUserRoles)
             {
                 user.Roles = await GetUserRolesAsync(user);
             }

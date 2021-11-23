@@ -1,0 +1,170 @@
+﻿@model Ingeco.Intranet.Models.AccountManagamentViewModel
+@{
+    ViewData["Title"] = "Administración de usuarios";
+}
+
+
+<h1>Administración de usuarios</h1>
+<hr />
+
+<div id="alert-container">
+    
+</div>
+
+<div class="account-index-header" style="display:flex; flex-direction: row; justify-content:space-between;">
+    <div class="account-index-header-options">
+        <a asp-action="Create" class="btn btn-success mb-3">
+            <span class="fa fa-plus"></span>
+            Crear nuevo
+        </a>
+    </div>
+    @*<div>
+        <button class="btn btn-secondary" onclick="ShowAlert('Prueba de alerta', 'Texto de prueba de alerta')">Probar alerta</button>
+    </div>*@
+</div>
+
+
+@if (Model.UsersCount > 0)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th class="text-center"><span class="fa fa-image"></span></th>
+                <th>Nombre y apellidos</th>
+                <th>Email</th>
+                <th>Roles</th>
+                <th class="text-center">Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in Model.Users)
+            {
+                <tr id="@u.Id.ToString()">
+                    <td class="align-self-baseline text-center">
+                        <img class="rounded-circle" width="35" src="/accounts/ProfilePicture?id=@u.Id.ToString()" />
+                    </td>
+                    <td>
+                        @u.Fullname
+                    </td>
+                    <td>
+                        @u.Email
+                    </td>
+                    <td>
+                        @foreach (var role in u.Roles)
+                        {
+                            <span class="badge badge-info">
+                                @role.Role.Name
+                            </span>
+                        }
+                    </td>
+                    <td class="text-center">
+                        <span class="fa @(u.Active ? "fa-check text-success" : "fa-ban text-danger")"></span>
+                    </td>
+                    <td>
+                        @if (u.Active)
+                        {
+                            <button class="btn btn-outline-warning" onclick="RiseActivationModal('deactivate', '@u.Id.ToString()')" title="Desactivar usuario">
+                                <span class="fa fa-user-slash"></span>
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-outline-success" onclick="RiseActivationModal('activate', '@u.Id.ToString()')" title="Activar usuario">
+                                <span class="fa fa-user-check"></span>
+                            </button>
+                        }
+                        <a class="btn btn-info" asp-action="ChangePassword" asp-route-id="@u.Id.ToString()" title="Cambiar contraseña">
+                            <span class="fa fa-asterisk"></span>
+                        </a>
+                        <a class="btn btn-success" asp-action="Edit" asp-route-id="@u.Id.ToString()" title="Editar usuario">
+                            <span class="fa fa-user-edit"></span>
+                        </a>
+                        <button class="btn btn-danger" onclick="RiseDeleteModal('@u.Id.ToString()')" title="Eliminar usuario">
+                            <span class="fa fa-user-times"></span>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <nav aria-label="Navegación de usuarios" class="text-center">
+        @if (Model.PagesCount > 1)
+        {
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(Model.FirstPage ? "disabled" : "")">
+                    <a class="page-link" href="/account?page=@(Model.CurrentPage - 1)&usersPerPage=@Model.UsersPerPage" tabindex="-1"><span class="fa fa-arrow-alt-circle-left"></span> Anterior</a>
+                </li>
+                @for (int i = 0; i < Model.PagesCount; i++)
+                {
+                    <li class="page-item @((i + 1) == Model.CurrentPage ? "disabled" : "")">
+                        <a class="page-link" href="/account?page=@(i + 1)&usersPerPage=@Model.UsersPerPage">@(i + 1)</a>
+                    </li>
+                }
+                <li class="page-item @(Model.LastPage ? "disabled" : "")">
+                    <a class="page-link" href="/account?page=@(Model.CurrentPage + 1)&usersPerPage=@Model.UsersPerPage">Siguiente <span class="fa fa-arrow-alt-circle-right"></span></a>
+                </li>
+            </ul>
+        }
+        <small class="text-muted">
+            <span class="fa fa-pager"></span> Página @Model.CurrentPage de @Model.PagesCount | <span class="fa fa-users"></span> Mostrando @Model.Users.Count() de @Model.UsersCount usuarios
+        </small>
+    </nav>
+}
+else
+{
+    <div class="no-items-notification">
+        <p>No existen usuarios registrados en el sistema <span class="fa fa-sad-tear" />.</p>
+        <div>
+            <a href="/accounts/create" class="btn btn-success"><span class="fa fa-user-alt"></span> Crear nuevo</a>
+        </div>
+    </div>
+}
+
+<!-- Activation Modal -->
+<div class="modal fade" id="modifyUserActivationModal" tabindex="-1" role="dialog" aria-labelledby="modifyUserActivationModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-activation-title"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="modal-activation-content" class="modal-body">
+
+            </div>
+            <div class="modal-footer" id="modal-activation-footer">
+                <button type="button" id="modal-activation-btn-primary" class="btn btn-primary"><span class="fa fa-check"></span> Aceptar</button>
+                <button type="button" id="model-activation-btn-secondary" class="btn btn-secondary" data-dismiss="modal"><span class="fa fa-slash"></span> Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" role="dialog" aria-labelledby="deleteUserModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-delete-title"><span class="fa fa-trash"></span> Eliminar usuario</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div id="modal-delete-content" class="modal-body">
+
+            </div>
+            <div class="modal-footer" id="modal-delete-footer">
+                <button type="button" id="modal-delete-btn-primary" class="btn btn-danger"><span class="fa fa-trash"></span> Eliminar</button>
+                <button type="button" id="model-delete-btn-secondary" class="btn btn-secondary" data-dismiss="modal"><span class="fa fa-slash"></span> Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/account-index.js"></script>
+}

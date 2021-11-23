@@ -1,9 +1,11 @@
-﻿<!DOCTYPE html>
+﻿@using System.Security.Claims
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Ingeco.Intranet</title>
+    <link rel="icon" href="~/favicon.svg" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
     <link rel="stylesheet" href="~/css/font-awasome/css/all.min.css" />
@@ -12,7 +14,7 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Ingeco.Intranet</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index"><img src="~/img/layout/intranet-iso.svg" class="web-logo" /></a>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -20,11 +22,64 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index"><span class="fa fa-home"></span> Inicio</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index"><span class="fa fa-newspaper"></span> Publicaciones</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index"><span class="fa fa-photo-video"></span> Galería</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index"><span class="fa fa-address-card"></span> Directorio</a>
+                        </li>
+                        <li class="nav-item">
+                            <div class="btn-group">
+                                <a asp-action="Index" asp-controller="Home" class="btn btn-primary"><span class="fa fa-info"></span> Información</a>
+                                <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" asp-action="Ïndex" asp-controller="Home"><span class="fa fa-user-clock"></span> Horario laboral</a>
+                                    <a class="dropdown-item" asp-action="Ïndex" asp-controller="Home"><span class="fa fa-table"></span> Guardia obrera</a>
+                                    <a class="dropdown-item" asp-action="Ïndex" asp-controller="Home"><span class="fa fa-calendar"></span> Eventos</a>
+                                    <a class="dropdown-item" asp-action="Ïndex" asp-controller="Home"><span class="fa fa-building"></span> Organismo superior</a>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav mr-sm-2">
+                        <li class="nav-item">
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <div class="dropdown">
+                                    <button class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <span><img src="/accounts/profilepicture" class="nav-profile-pic mr-2" /></span> @User.Claims.First(c => c.Type == ClaimTypes.Name).Value
+                                    </button>
+                                    <div class="dropdown-menu dropdown-menu-lg-right dropdown-menu-md-right" aria-labelledby="dropdownMenuButton">
+                                        @if (User.IsInRole("Admin"))
+                                        {
+                                            <a class="dropdown-item" asp-action="Index" asp-controller="Accounts"><span class="fa fa-users"></span> Usuarios</a>
+                                        }
+                                        @if (User.IsInRole("Webmaster"))
+                                        {
+                                            <a class="dropdown-item" asp-action="Index" asp-controller="Categories"><span class="fa fa-certificate"></span> Categorías</a>
+                                        }
+                                        @if (User.IsInRole("Webmaster") || User.IsInRole("Publisher"))
+                                        {
+                                            <a class="dropdown-item" asp-action="List" asp-controller="Posts"><span class="fa fa-newspaper"></span> Administrar publicaciones</a>
+                                        }
+                                        <a class="dropdown-item" asp-action="Logout" asp-controller="Accounts"><span class="fa fa-door-open"></span> Cerrar sesión</a>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                var returnUrl = $"https://{Context.Request.Host}{Context.Request.Path}";
+                                <a asp-action="Login" asp-controller="Accounts" asp-route-returnUrl="@returnUrl" class="btn btn-light"><span class="fa fa-user"></span> Iniciar sesión</a>
+                            }
+                        </li>
+
                     </ul>
                 </div>
             </div>

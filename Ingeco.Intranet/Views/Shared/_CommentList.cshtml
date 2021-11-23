@@ -1,0 +1,6 @@
+﻿@model IEnumerable<CommentViewModel>
+
+@foreach (var comment in Model)
+{
+    <partial name="_Comment" model="comment" />
+}

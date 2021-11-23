@@ -3,7 +3,7 @@ var uploadIndicator = document.getElementById("upload-indicator");
 
 // upload the selected file
 $("#profilephoto").ajaxfileupload({
-    'action': '/account/uploadtempuserphoto',
+    'action': '/accounts/uploadtempuserphoto',
     'onStart': function () {
         // show the badge that indicates the file upload (removing the 'collapse' class)
         uploadIndicator.classList.remove("collapse");

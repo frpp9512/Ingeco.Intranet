@@ -1,0 +1,18 @@
+﻿@model Ingeco.Intranet.Models.WebMediaViewModel
+
+@if (Model is not null)
+{
+    <div class="figure">
+        @if (Model.MediaType == Ingeco.Intranet.Data.Models.WebMediaType.Picture)
+        {
+            <img src="/posts/media?id=@Model.Id" class="figure-img w-100" />
+        }
+        else
+        {
+            <video src="/posts/media?id=@Model.Id" class="figure-img" autoplay controls></video>
+        }
+        <div class="figure-caption">
+            @Model.Description
+        </div>
+    </div>
+}

@@ -27,13 +27,15 @@ namespace Ingeco.Intranet
             services.AddDbContext<WebDataContext>(options => options.UseNpgsql(Configuration.GetConnectionString("Default")));
             services.AddScoped<IAccountSecurityRepository, AccountSecurityRepository>();
             services.AddScoped<IPostsManagementRepository, PostsManagementRepository>();
+            services.Configure<WeatherApiConfig>(Configuration.GetSection("WeatherApiConfig"));
+            services.AddScoped<IWeatherForecastManager, WeatherForecastManager>();
             services.AddAuthentication(Constants.AUTH_SCHEME)
                     .AddCookie(Constants.AUTH_SCHEME, config => 
                     {
                         config.Cookie.Name = "IngecoIntranetCookie";
-                        config.LoginPath = "/Account/Login";
-                        config.AccessDeniedPath = "/Account/AccessDenied";
-                        config.LogoutPath = "/Account/Logout";
+                        config.LoginPath = "/Accounts/Login";
+                        config.AccessDeniedPath = "/Accounts/AccessDenied";
+                        config.LogoutPath = "/Accounts/Logout";
                     });
 
             services.AddControllersWithViews();

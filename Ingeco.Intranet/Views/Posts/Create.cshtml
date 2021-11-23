@@ -1,0 +1,487 @@
+﻿@model Ingeco.Intranet.Models.CreatePostViewModel
+
+@{
+    ViewData["Title"] = "Nueva publicación";
+}
+
+<h1><span class="fa fa-newspaper"></span> Nueva publiación</h1>
+
+<h4>Vamos a crear nuevo contenido</h4>
+<hr />
+<div class="row">
+    <div class="col-md-10">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <div class="form-group">
+                    <label for="categorySelected">Categoría</label>
+                    <select asp-for="CategorySelected" class="form-control" id="categorySelected">
+                        @foreach (var category in Model.Categories)
+                        {
+                            <option value="@category.Id">@category.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label asp-for="Title" class="control-label"></label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Description" class="control-label"></label>
+                <input asp-for="Description" class="form-control" />
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label for="newTag" class="control-label">Etiquetas</label>
+                <div class="d-flex flex-row justify-content-between">
+                    <input id="newTag" class="form-control" placeholder="Ej. consutrucción viajes evento mujer" />
+                    <button type="button" class="btn btn-light" onclick="AddTag()">Agregar</button>
+                </div>
+                <div id="tag-list">
+                    
+                </div>
+            </div>
+            <div class="form-group">
+                <label asp-for="Body" class="control-label"></label>
+                <textarea asp-for="Body" class="form-control"></textarea>
+                <span asp-validation-for="Body" class="text-danger"></span>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-md-5 col-sm-12">
+                    <div class="d-inline-flex justify-content-between align-items-center">
+                        <div class="mr-3">
+                            <span class="fa fa-image"></span> Imágenes de la publicación
+                        </div>
+                        <button type="button" class="btn btn-outline-primary" onclick="NewMedia('image')"><span class="fa fa-plus"></span> Agregar</button>
+                    </div>
+                    <hr />
+                    <div id="image-list">
+
+                    </div>
+                </div>
+                <div class="col-md-5 col-sm-12 mb-3">
+                    <div class="d-inline-flex justify-content-between align-items-center">
+                        <div class="mr-3">
+                            <span class="fa fa-video"></span> Videos de la publicación
+                        </div>
+                        <button type="button" class="btn btn-outline-primary" onclick="NewMedia('video')"><span class="fa fa-plus"></span> Agregar</button>
+                    </div>
+                    <hr />
+                    <div id="video-list">
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-footer">
+                <div>
+                    <a asp-action="Index"><span class="fa fa-arrow-circle-left"></span> Regresar al listado</a>
+                </div>
+                <input asp-for="SerializedImages" type="hidden" />
+                <input asp-for="SerializedVideos" type="hidden" />
+                <input asp-for="SerializedTags" type="hidden" />
+                <button type="submit" class="btn btn-info">
+                    <span class="fa fa-plus-square"></span> Crear publicación
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modals -->
+<!-- New media modal -->
+<div class="modal fade" id="mediaModal" tabindex="-1" role="dialog" aria-labelledby="newMediaModalTitle" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="newMediaModalTitle"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="mediaIdInput" class="col-form-label">Id</label>
+                        <input type="number" class="form-control" id="mediaIdInput" autofocus>
+                    </div>
+                    <div class="form-group">
+                        <label for="mediaFilenameInput" class="col-form-label">Medio</label>
+                        <input type="file" id="mediaFilenameInput" class="form-control-file" />
+                    </div>
+                    <div class="form-group">
+                        <label for="mediaDescriptionInput" class="col-form-label">Descripción</label>
+                        <input class="form-control" id="mediaDescriptionInput" placeholder="Descripción del medio a utilizar" />
+                    </div>
+                    <div class="form-group form-check">
+                        <input type="checkbox" class="form-check-input" id="isCoverCheck">
+                        <label class="form-check-label" for="isCoverCheck">Portada</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="mediaActionModalButton"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading modal -->
+<div id="loadingModal" class="modal bd-example-modal-sm mt-5" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content d-inline-flex justify-content-center align-items-center">
+            <div class="spinner-border text-primary ml-auto mr-auto mt-5 mb-5" role="status">
+                <span class="sr-only">Comunicándose con el servidor...</span>
+            </div>
+            <h4 class="m-5 text-center"><span class="fa fa-server"></span> Comunicándose con el servidor</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Preview modal -->
+<div id="previewModal" class="modal fade bd-example-modal-xl" tabindex="-1" role="dialog" aria-labelledby="myExtraLargeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div id="previewContent" class="modal-content bg-transparent border-0">
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script src="~/lib/tinymce/tinymce.js"></script>
+    <script src="~/lib/jquery.ajaxfileupload.js"></script>
+    <script>
+        tinymce.init({
+            selector: 'textarea#Body',
+            language: 'es',
+            plugins: "lists advlist code image table fullscreen textcolor",
+            menubar: "edit insert view format table tools",
+            toolbar: "undo redo styleselect bold italic alignleft aligncenter alignright textcolor bullist numlist outdent ident code table fullscreen",
+            height: 500,
+            image_caption: true,
+            typeahead_urls: false,
+            image_uploadtab: false,
+        });
+
+        var images = [];
+        var videos = [];
+
+        const mediaItemTemplate =
+            "<div class='media-selection-item'>" +
+            "<div class='media-selection-number'>" +
+            "{isCoverBadge}" +
+            "<div>" +
+            "<span class='fa fa-{type}'></span>" +
+            "</div>" +
+            "<div>" +
+            "{id}" +
+            "</div>" +
+            "</div>" +
+            "<div class='media-selection-content' onclick='PreviewMedia(\"{type}\", \"{id}\")'>" +
+            "<div class='media-selection-preview'>{media-preview}</div>" +
+            "<hr />" +
+            "<div>{description}</div>" +
+            "</div>" +
+            "<input type='hidden' name='MediaVideosTmpNames' value='{tmpId}' />" +
+            "<input type='hidden' name='MediaVideosDescriptions' value='{description}' />" +
+            "<input type='hidden' name='MediaVideosIds' value='{id}' />" +
+            "<div class='media-selection-delete'>" +
+            "<button type='button' class='btn btn-danger' title='Quitar' onclick='RemoveMedia(\"{type}\", \"{id}\")'>" +
+            "<span class='fa fa-trash'></span>" +
+            "</button>" +
+            "</div>" +
+            "</div>";
+
+        const imagesContainer = document.getElementById("image-list");
+        const videoContainer = document.getElementById("video-list");
+
+        RefreshMediaLists();
+
+        function RefreshMediaLists() {
+            RefreshImageList();
+            RefreshVideoList();
+        }
+
+        function RefreshImageList() {
+            ClearImagesContainer();
+            for (var i = 0; i < images.length; i++) {
+                const image = images[i];
+
+                var imageItemHtml = mediaItemTemplate
+                    .replace("{type}", "image")
+                    .replace("{type}", "image")
+                    .replace("{type}", "image")
+                    .replace("{id}", image.id)
+                    .replace("{id}", image.id)
+                    .replace("{id}", image.id)
+                    .replace("{id}", image.id)
+                    .replace("{tmpId}", image.tmpId)
+                    .replace("{media-preview}", "<img src='/posts/posttmpimage?tmpId=" + image.tmpId + "' />")
+                    .replace("{filename}", GetSimpleFilename(image.filename))
+                    .replace("{filename}", GetSimpleFilename(image.filename))
+                    .replace("{description}", image.description)
+                    .replace("{description}", image.description)
+                    .replace("{isCoverBadge}", image.isCover ? "<span class='fa fa-newspaper text-info' title='Portada'></span>" : "");
+
+                imagesContainer.innerHTML += imageItemHtml;
+            }
+            var input = document.getElementById("SerializedImages");
+            input.value = JSON.stringify(images);
+        }
+
+        function RefreshVideoList() {
+            ClearVideoContainer();
+            for (var i = 0; i < videos.length; i++) {
+                const video = videos[i];
+
+                var videoItemHtml = mediaItemTemplate
+                    .replace("{type}", "video")
+                    .replace("{type}", "video")
+                    .replace("{type}", "video")
+                    .replace("{id}", video.id)
+                    .replace("{id}", video.id)
+                    .replace("{id}", video.id)
+                    .replace("{id}", video.id)
+                    .replace("{tmpId}", video.tmpId)
+                    .replace("{media-preview}", "<video src='/posts/posttmpvideo?tmpId=" + video.tmpId + "' />")
+                    .replace("{filename}", GetSimpleFilename(video.filename))
+                    .replace("{filename}", GetSimpleFilename(video.filename))
+                    .replace("{description}", video.description)
+                    .replace("{description}", video.description)
+                    .replace("{isCoverBadge}", video.isCover ? "<span class='fa fa-newspaper text-info' title='Portada'></span>" : "");
+
+                videoContainer.innerHTML += videoItemHtml;
+            }
+            var input = document.getElementById("SerializedVideos");
+            input.value = JSON.stringify(videos);
+        }
+
+        function GetSimpleFilename(filename) {
+            var splitted = filename.split('\\');
+            return splitted[splitted.length - 1];
+        }
+
+        function ClearImagesContainer() {
+            while (imagesContainer.children.length > 0) {
+                imagesContainer.removeChild(imagesContainer.lastChild);
+            }
+        }
+
+        function ClearVideoContainer() {
+            while (videoContainer.children.length > 0) {
+                videoContainer.removeChild(videoContainer.lastChild);
+            }
+        }
+
+        function GetNextAvailableMediaId(type) {
+            id = 1;
+            do {
+                if (!ExistMedia(type, id)) {
+                    return id;
+                }
+                id++;
+            } while (true);
+        }
+
+        function ExistMedia(type, id) {
+            return type == "image" ? ExistsImage(id) : ExistsVideo(id);
+        }
+
+        function ExistsImage(id) {
+            for (var i = 0; i < images.length; i++) {
+                const image = images[i];
+                if (image.id == id) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function ExistsVideo(id) {
+            for (var i = 0; i < videos.length; i++) {
+                const video = videos[i];
+                if (video.id == id) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        const mediaModal = $("#mediaModal");
+        const loadingModal = $("#loadingModal");
+
+        function ResetModalForm() {
+            const idInput = document.getElementById("mediaIdInput");
+            const filenameInput = document.getElementById("mediaFilenameInput");
+            const descriptionInput = document.getElementById("mediaDescriptionInput");
+            const isCoverInput = document.getElementById("isCoverCheck");
+            descriptionInput.value = null;
+            idInput.value = null;
+            filenameInput.value = null;
+            isCoverInput.checked = false;
+        }
+
+        function NewMedia(type) {
+            ResetModalForm();
+
+            const modalTitle = document.getElementById("newMediaModalTitle");
+            modalTitle.innerHTML = "<span class= 'fa fa-" + type + "'></span> Agregar " + (type == "image" ? "imágen" : "video");
+
+            const idInput = document.getElementById("mediaIdInput");
+            var nextId = GetNextAvailableMediaId(type);
+            idInput.value = nextId;
+
+            const filenameInput = document.getElementById("mediaFilenameInput");
+            filenameInput.setAttribute("accept", type == "image" ? "image/jpeg" : "video/mp4");
+
+            const mediaActionModalBtn = document.getElementById("mediaActionModalButton");
+            mediaActionModalBtn.innerHTML = "Agregar " + (type == "image" ? "imágen" : "video");
+
+            mediaActionModalBtn.onclick = function () {
+                var id = idInput.value;
+                if (ExistMedia(type, id)) {
+                    alert("Ya existe un medio con ese id.");
+                } else {
+                    const descriptionInput = document.getElementById("mediaDescriptionInput");
+                    var description = descriptionInput.value;
+                    const isCoverInput = document.getElementById("isCoverCheck");
+                    var isCover = isCoverInput.checked;
+                    var files = filenameInput.files;
+
+                    var fd = new FormData();
+                    fd.append("mediaFile", files[0]);
+                    fd.append("mediaType", type);
+
+                    if (files.length > 0) {
+                        loadingModal.modal("show");
+                        $.ajax({
+                            url: "/posts/uploadtmpmedia",
+                            type: "POST",
+                            data: fd,
+                            processData: false,
+                            contentType: false,
+                            success: function (response) {
+                                var mediaItem = {
+                                    id: id,
+                                    filename: response.filename,
+                                    tmpId: response.tmpId,
+                                    description: description,
+                                    isCover: isCover
+                                };
+                                if (mediaItem.isCover) {
+                                    RemoveAllCoverFlags();
+                                }
+                                loadingModal.modal("hide");
+                                mediaModal.modal("hide");
+                                if (type === "image") {
+                                    images.push(mediaItem);
+                                } else {
+                                    videos.push(mediaItem)
+                                }
+                                RefreshMediaLists();
+                            },
+                            error: function (response) {
+                                console.log(response);
+                                alert("Error subiendo fichero de medio: " + response.responseText);
+                                loadingModal.modal("hide");
+                            }
+                        });
+                    } else {
+                        alert("Seleccione el fichero.");
+                    }
+                }
+            };
+            mediaModal.modal("handleUpdate");
+            mediaModal.modal("show");
+        }
+
+        function RemoveAllCoverFlags() {
+            images.forEach(i => i.isCover = false);
+            videos.forEach(v => v.isCover = false);
+        }
+
+        function RemoveMedia(type, id) {
+            if (type === "image") {
+                var index = images.findIndex(i => i.id === id);
+                images.splice(index, 1);
+                RefreshImageList();
+            } else {
+                var index = videos.findIndex(i => i.id === id);
+                videos.splice(index, 1);
+                RefreshVideoList();
+            }
+        }
+
+        const previewModal = $("#previewModal");
+
+        function PreviewMedia(type, id) {
+            const previewContent = document.getElementById("previewContent");
+            if (type === "image") {
+                var index = images.findIndex(i => i.id === id);
+                previewContent.innerHTML = "<div class='p-2 text-white font-weight-bold'>" + images[index].description + "</div><img src='/posts/posttmpimage?tmpId=" + images[index].tmpId + "' />";
+            } else {
+                var index = videos.findIndex(i => i.id === id);
+                previewContent.innerHTML = "<div class='p-2 text-white font-weight-bold'>" + videos[index].description + "</div><video id='previewVideo' src='/posts/posttmpvideo?tmpId=" + videos[index].tmpId + "' autoplay controls></video>";
+                previewModal.on("hidden.bs.modal", function (e) {
+                    var videoPreview = document.getElementById("previewVideo");
+                    videoPreview.pause();
+                    videoPreview.currentTime = 0;
+                });
+            }
+            previewModal.modal("show");
+        }
+
+        var tags = [];
+
+        function AddTag() {
+            const newTagInput = document.getElementById("newTag");
+            var tagLine = newTagInput.value;
+            var newTags = tagLine.split(" ");
+            for (var i = 0; i < newTags.length; i++) {
+                var newTag = newTags[i];
+                if (newTag != "") {
+                    tags.push(newTag);
+                }
+            }
+            newTagInput.value = "";
+            RefreshTagList();
+        }
+
+        const tagTemplate = "<span class='badge badge-light'>{tagName} <span class='close-badge' onclick='DeleteTag(\"{tagName}\")'>&times;</span></span>";
+
+        function RefreshTagList() {
+            ClearTagsContainer();
+            const tagContainer = document.getElementById("tag-list");
+            for (var i = 0; i < tags.length; i++) {
+                var tag = tagTemplate.replace("{tagName}", tags[i])
+                                     .replace("{tagName}", tags[i]);
+                tagContainer.innerHTML += tag;
+            }
+
+            var hiddenInput = document.getElementById("SerializedTags");
+            hiddenInput.value = JSON.stringify(tags);
+        }
+
+        function ClearTagsContainer() {
+            const tagsContainer = document.getElementById("tag-list");
+            while (tagsContainer.children.length > 0) {
+                tagsContainer.removeChild(tagsContainer.lastChild);
+            }
+        }
+
+        function DeleteTag(tagName) {
+            var index = tags.indexOf(tagName);
+            tags.splice(index, 1);
+            RefreshTagList();
+        }
+
+        RefreshTagList();
+
+    </script>
+}

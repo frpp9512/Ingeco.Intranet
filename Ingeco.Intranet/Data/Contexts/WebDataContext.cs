@@ -119,13 +119,12 @@ namespace Ingeco.Intranet.Data.Contexts
                         .HasForeignKey(r => r.PostId)
                         .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Comment>()
-                        .HasMany(c => c.Replies)
-                        .WithOne(c => c.RepliedTo)
-                        .HasForeignKey(c => c.RepliedToId)
-                        .OnDelete(DeleteBehavior.Cascade);
-
             #endregion
+
+            modelBuilder.Entity<Comment>()
+                        .HasOne(c => c.RepliedTo)
+                        .WithMany(c => c.Replies)
+                        .IsRequired(false);
 
             base.OnModelCreating(modelBuilder);
         }

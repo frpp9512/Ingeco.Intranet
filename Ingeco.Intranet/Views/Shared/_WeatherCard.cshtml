@@ -1,0 +1,57 @@
+﻿@model Ingeco.Intranet.Models.ForecastSummaryViewModel
+@using Ingeco.Intranet.Data.Helpers
+
+@{
+    var forecastData = Model;
+}
+
+<div class="weather-card-summary">
+    @if (forecastData is not null)
+    {
+        <div class="weather-card-location" title="Ubicación: @(forecastData.WeatherLocation.Name), @forecastData.WeatherLocation.Country">
+            <span class="fa fa-map-marked"></span>
+            @(forecastData.WeatherLocation.Name), @forecastData.WeatherLocation.Country
+            <hr />
+        </div>
+        <div class="weather-card-condition" title="Condición del clima: @WeatherHelpers.GetWeatherConditionInSpanish(forecastData.CurrentWeather.Condition.Text)">
+            <img src="http:@forecastData.CurrentWeather.Condition.IconUrl" />
+            <div>@WeatherHelpers.GetWeatherConditionInSpanish(forecastData.CurrentWeather.Condition.Text)</div>
+        </div>
+        <div class="weather-card-temperature" title="Temperatura en grados Celsius: @(forecastData.CurrentWeather.TemperatureCelsius)º">
+            @(forecastData.CurrentWeather.TemperatureCelsius)º
+        </div>
+        <div class="weather-card-wind">
+            <span class="weather-badge" title="Humedad: @(forecastData.CurrentWeather.Humidity)%">
+                <span class="fa fa-water"></span> @(forecastData.CurrentWeather.Humidity)%
+            </span>
+            <span class="weather-badge">
+                <span title="Volocidad del viento: @forecastData.CurrentWeather.WindKph km/h">
+                    <span class="fa fa-wind"></span> @forecastData.CurrentWeather.WindKph km/h
+                </span>
+                <span style="font-weight: bolder;" title="Dirección del viento: @WeatherHelpers.GetWindDirectionText(@forecastData.CurrentWeather.WindDirection) @(forecastData.CurrentWeather.WindDegree)º">
+                    <span class="fa fa-arrow-up" style="transform: rotate(@(forecastData.CurrentWeather.WindDegree)deg)"></span>
+                    @forecastData.CurrentWeather.WindDirection
+                </span>
+            </span>
+            <span class="weather-badge" style="color: @(forecastData.CurrentWeather.UvIndex switch { var i when i <= 2 => "green", var i when i > 2 && i <= 5 => "yellow", var i when i > 5 && i <= 7 => "orange", var i when i > 7 && i <= 10 => "red", var i when i > 10 => "red", _ => "black" })" title="Índice UV: @WeatherHelpers.GetUvAlert(forecastData.CurrentWeather.UvIndex)">
+                <span class="fa fa-sun"></span> @forecastData.CurrentWeather.UvIndex
+            </span>
+        </div>
+        <div class="weather-card-link">
+            <a asp-action="Index" asp-controller="Weather" title="Ver todos los detalles referentes al pronóstico del clima."><span class="fa fa-dot-circle"></span> Ver parte completo</a>
+        </div>
+        <div class="weather-card-updated">
+            <hr />
+            Actualizado: @forecastData.CurrentWeather.Updated.ToString("hh:mm tt")
+        </div>
+    }
+    else
+    {
+        <div class="weather-card-nodata">
+            <span class="fa fa-cloud-sun-rain"></span> 
+            <br />
+            <br />
+            <span class="fa fa-exclamation-triangle"></span> No se pudo cargar la información del clima.
+        </div>
+    }
+</div>

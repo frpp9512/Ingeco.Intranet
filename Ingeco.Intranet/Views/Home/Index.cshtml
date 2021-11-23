@@ -1,15 +1,29 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model Ingeco.Intranet.Models.HomePageViewModel
+@using Ingeco.Intranet.Data.Helpers
+@{
+    ViewData["Title"] = "Inicio";
+    var forecastData = Model.ForecastSummary;
 }
 
 <div class="main-layout">
-
 </div>
 
-<div class="jumbotron" style="background: url('/img/layout/main-banner.jpg') #ff6a00; background-size: 100%; background-repeat: no-repeat; background-attachment: fixed; color: #fff; text-align:left;">
-    <h1>Bienvenidos a nuestra <strong>Intranet</strong></h1>
-    <p>La web donde podrá encontrar toda la información empresarial de su interés.</p>
+
+<div class="home-page-content">
+    <div class="web-title" style="background: url('/img/layout/main-banner.jpg') white; background-size: cover; background-repeat: no-repeat; background-attachment: fixed; color: #fff; text-align:left;">
+        <img src="~/img/layout/intranet-logo.svg" class="home-page-mainlogo" />
+        <div>
+            <a asp-action="Posts" asp-controller="Posts" class="btn-light-rounded"><span class="fa fa-newspaper"></span> Publicaciones</a>
+            <a asp-action="Index" asp-controller="Home" class="btn-rounded"><span class="fa fa-info ml-1 mr-1"></span> Información</a>
+        </div>
+    </div>
+
+    <partial name="_PostsCardContainer" model="Model.LatestPosts" />
+
+    <partial name="_WeatherCard" model="forecastData" />
 </div>
+
+
 <div>
     <span class="text-muted small">@Environment.OSVersion @(Environment.Is64BitProcess ? "x64" : "x86")</span>
 </div>

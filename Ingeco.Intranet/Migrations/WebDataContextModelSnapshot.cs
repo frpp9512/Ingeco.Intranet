@@ -51,7 +51,7 @@ namespace Ingeco.Intranet.Migrations
                     b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("RepliedToId")
+                    b.Property<Guid?>("RepliedToId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Text")
@@ -152,6 +152,9 @@ namespace Ingeco.Intranet.Migrations
 
                     b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("ViewId")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -260,9 +263,7 @@ namespace Ingeco.Intranet.Migrations
 
                     b.HasOne("Ingeco.Intranet.Data.Models.Comment", "RepliedTo")
                         .WithMany("Replies")
-                        .HasForeignKey("RepliedToId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("RepliedToId");
 
                     b.HasOne("SmartB1t.Security.WebSecurity.Local.User", "User")
                         .WithMany()

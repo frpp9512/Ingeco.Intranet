@@ -1,0 +1,74 @@
+﻿@model PostsPageViewModel
+
+@{
+    ViewData["Title"] = "Listado de publicaciones";
+}
+
+<h1>Listado de publicaciones</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-info"><span class="fa fa-plus-square"></span> Nueva publicación</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                <span class="fa fa-globe" title="Estado"></span>
+            </th>
+            <th>
+                <span class="fa fa-newspaper"></span>
+                Título
+            </th>
+            <th>
+                <span class="fa fa-calendar"></span>
+                Creado
+            </th>
+            <th>
+                <span class="fa fa-certificate"></span>
+                Categoría
+            </th>
+            <th>
+                <span class="fa fa-tags"></span>
+                Etiquetas
+            </th>
+            <th>
+                <span class="fa fa-comment" title="Comentarios"></span>
+            </th>
+            <th>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.PostsList)
+        {
+            <tr>
+                <td align="center">
+                    <span class="fa fa-circle-notch @(item.Public ? "text-success" : "text-danger")" title="@(item.Public ? "En linea" : "Oculto")"></span>
+                </td>
+                <td>
+                    <a href="/posts?id=@item.Id">@item.Title</a>
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Created)
+                </td>
+                <td align="center">
+                    @item.Category.Name
+                </td>
+                <td>
+                    @foreach (var tag in @item.TagsLine.Split(";"))
+                    {
+                        <span class="badge badge-info">@tag</span>
+                    }
+                </td>
+                <td align="right">
+                    @Html.DisplayFor(modelItem => item.TotalCommentsCount)
+                </td>
+                <td>
+                    <a asp-action="SetPublicState" asp-route-publicState="@(!item.Public)" class="btn btn-sm btn-info" title="Cambiar estado"><span class="fa fa-globe"></span></a>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-success" title="Editar"><span class="fa fa-pencil-alt"></span></a>
+                    <a asp-action="Delete" asp-route-postId="@item.Id" class="btn btn-sm btn-danger" title="Eliminar"><span class="fa fa-trash"></span></a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

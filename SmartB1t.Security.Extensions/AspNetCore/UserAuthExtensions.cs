@@ -34,5 +34,8 @@ namespace SmartB1t.Security.Extensions.AspNetCore
             var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
             return claimsPrincipal;
         }
+
+        public static Guid GetId(this ClaimsPrincipal user)
+            => new(user.Claims.First(c => c.Type == ClaimTypes.NameIdentifier).Value);
     }
 }

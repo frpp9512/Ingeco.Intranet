@@ -13,6 +13,11 @@ namespace Ingeco.Intranet.Data.Models
         public Guid Id { get; set; }
 
         /// <summary>
+        /// The id used for view reference.
+        /// </summary>
+        public int ViewId { get; set; }
+
+        /// <summary>
         /// The type of the web media.
         /// </summary>
         public WebMediaType MediaType { get; set; }

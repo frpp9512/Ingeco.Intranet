@@ -1,0 +1,18 @@
+﻿@model SmartB1t.Security.WebSecurity.Local.User
+
+<div class="user-post-card">
+    <div class="user-profile-pic">
+        <img class="rounded-circle" width="100" src="/accounts/profilepicture?id=@Model.Id.ToString()" />
+    </div>
+    <div class="user-info">
+        <div>
+            @Model.Fullname
+        </div>
+        <div>
+            @Model.Position - @Model.Department
+        </div>
+        <div>
+            @Model.Email
+        </div>
+    </div>
+</div>

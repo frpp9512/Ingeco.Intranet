@@ -1,0 +1,279 @@
+﻿@model Ingeco.Intranet.Models.PostViewModel
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<article class="post">
+    <div class="post-category">
+        @Model.Category.Name
+    </div>
+    <div class="post-title">@Model.Title</div>
+    <div class="post-description">@Model.Description</div>
+    <div class="post-info">
+        <div>
+            Publicado: @Model.Created.DateTime.ToShortDateString() @Model.Created.DateTime.ToShortTimeString()
+        </div>
+        <div>
+            Por: <img class="user-small-picture rounded-circle" width="25" src="/accounts/profilepicture?id=@Model.PostedBy.Id.ToString()" /> @Model.PostedBy.Fullname
+        </div>
+    </div>
+    <partial name="_PostTags" model="@Model.GetTagArray()" />
+    <hr />
+    <partial name="_WebMedia" model="@Model.Cover" />
+    <div class="post-body" id="post-body">
+        @Html.Raw(Model.Body)
+    </div>
+    <hr />
+    <partial name="_UserPostCard" model="@Model.PostedBy" />
+
+    <div class="comment-section mt-5">
+
+        <h3 class="mt-3 mb-3">Comentarios <span class="badge badge-info" id="commentsTotal">@Model.TotalCommentsCount</span></h3>
+
+        @if (User.Identity.IsAuthenticated)
+        {
+            <button type="button" class="btn btn-info" onclick="DoComment()"><span class="fa fa-comment"></span> Nuevo comentario</button>
+        }
+        else
+        {
+            <small>Debe de <a href="/accounts/login?returnUrl=@Html.Encode($"/posts?id={Model.Id.ToString()}")">iniciar sesión</a> para poder comentar.</small>
+        }
+
+        <div id="comment-main-container" class="mt-4">
+            <partial name="_CommentList" model="Model.Comments" />
+        </div>
+    </div>
+</article>
+
+@if (User.Identity.IsAuthenticated)
+{
+    <!-- Comment modal -->
+    <div class="modal fade" id="commentModal" tabindex="-1" role="dialog" aria-labelledby="commentModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title" id="commentModalLabel">Nuevo comentario</h6>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="comment-text" class="col-form-label">Comentario:</label>
+                        <textarea class="form-control" id="comment-text" autofocus></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal"><span class="fa fa-times"></span> Cerrar</button>
+                    <button type="button" class="btn btn-primary" id="comment-btn"><span class="fa fa-paper-plane"></span> Comentar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading modal -->
+    <div id="loadingModal" class="modal bd-example-modal-sm mt-5" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content d-inline-flex justify-content-center align-items-center">
+                <div class="spinner-border text-primary ml-auto mr-auto mt-5 mb-5" role="status">
+                    <span class="sr-only">Comunicándose con el servidor...</span>
+                </div>
+                <h4 class="m-5 text-center"><span class="fa fa-server"></span> Comunicándose con el servidor</h4>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts
+{
+    <script>
+        const postBody = document.getElementById("post-body");
+        const dPostId = '@(Model.Id.ToString())';
+
+        function RemoveStyleAttrFromChildren(container) {
+            var children = container.children;
+            for (var i = 0; i < children.length; i++) {
+                var child = children[i];
+                child.removeAttribute("style");
+                RemoveStyleAttrFromChildren(child);
+            }
+        }
+
+        RemoveStyleAttrFromChildren(postBody);
+
+        const commentModal = $("#commentModal");
+        const loadingModal = $("#loadingModal");
+
+        function ClearCommentTextInput() {
+            const commentTextInput = document.getElementById("comment-text");
+            commentTextInput.value = "";
+        }
+
+        function SelectCommentTextInput() {
+            const commentTextInput = document.getElementById("comment-text");
+            commentTextInput.focus();
+        }
+
+        function DoComment() {
+            SetCommentModalTitle("Nuevo comentario a la publicación");
+            ClearCommentTextInput();
+            SetCommentModalBtnClickAction(function () {
+                var commentMessage = document.getElementById("comment-text").value;
+                if (commentMessage == "") {
+                    alert("Debe de escribir el comentario.");
+                } else {
+                    var postId = GetPostId();
+                    if (postId === "") {
+                        alert("Error obteniendo id de publicación.");
+                    } else {
+                        console.log(postId);
+                        loadingModal.modal("show");
+                        commentModal.modal("hide");
+                        SendComment({
+                            postId: postId,
+                            commentMessage: commentMessage,
+                            isReply: false,
+                            replyToId: null
+                        }, function (response) {
+                            const commentSection = document.getElementById("comment-main-container");
+                            commentSection.innerHTML = response.responseText + commentSection.innerHTML;
+                            IncreaseCommentsTotal();
+                            loadingModal.modal("hide");
+                        }, function (response) {
+                            loadingModal.modal("hide");
+                            alert(reponse);
+                            alert("Error en el comentario" + reponse.responseText);
+                        });
+                    }
+                }
+            });
+            commentModal.modal("show");
+            SelectCommentTextInput();
+        }
+
+        function ReplyTo(commentId) {
+            const commentReplied = document.getElementById(commentId);
+            const commentAuthor = commentReplied.getElementsByTagName("h5")[0].textContent;
+            SetCommentModalTitle("Responder comentario de " + commentAuthor, true);
+            ClearCommentTextInput();
+            const btn = document.getElementById("comment-btn");
+            btn.onclick = function (e) {
+                var commentMessage = document.getElementById("comment-text").value;
+                if (commentMessage == "") {
+                    alert("Debe de escribir el comentario.");
+                } else {
+                    var postId = GetPostId();
+                    if (postId === "") {
+                        alert("Error obteniendo id de publicación.");
+                    } else {
+                        console.log(postId);
+                        loadingModal.modal("show");
+                        commentModal.modal("hide");
+                        SendComment({
+                            postId: postId,
+                            commentMessage: commentMessage,
+                            isReply: true,
+                            replyToId: commentId
+                        }, function (response) {
+                            const commentBody = commentReplied.getElementsByClassName("media-body")[0];
+                            commentBody.innerHTML += response.responseText;
+                            IncreaseCommentsTotal();
+                            loadingModal.modal("hide");
+                        }, function (response) {
+                            loadingModal.modal("hide");
+                            alert("Error en el comentario" + reponse.responseText);
+                        });
+                    }
+                }
+            };
+            commentModal.modal("show");
+        }
+
+        function SetCommentModalBtnClickAction(action) {
+            const btn = document.getElementById("comment-btn");
+            btn.onclick = action;
+        }
+
+        function SendComment(comment, completedCallback, errorCallback) {
+            $.ajax({
+                url: "/posts/docomment",
+                data: {
+                    postId: comment.postId,
+                    commentText: comment.commentMessage,
+                    isReply: comment.isReply,
+                    replyTo: comment.replyToId
+                },
+                method: "POST",
+                complete: completedCallback,
+                error: errorCallback
+            });
+        }
+
+        function GetPostId() {
+            return dPostId;
+            //var postId = "";
+            //var url = location.search;
+            //var hashSections = url.split("#");
+            //var requestSections = hashSections[0].split("&");
+            //for (var i = 0; i < requestSections.length; i++) {
+            //    const section = requestSections[i];
+            //    if (section.indexOf("id=")) {
+            //        postId = section.split("=")[1];
+            //    }
+            //}
+            //return postId;
+        }
+
+        function SetCommentModalTitle(title, isReply) {
+            const modalTitle = document.getElementById("commentModalLabel");
+            var icon = "<span class='fa fa-comment'></span>";
+            if (isReply) {
+                icon = "<span class='fa fa-reply'></span>";
+            }
+            modalTitle.innerHTML = icon + " " + title;
+        }
+
+        function IncreaseCommentsTotal() {
+            const totalBadge = document.getElementById("commentsTotal");
+            var total = parseInt(totalBadge.innerHTML);
+            totalBadge.innerHTML = total + 1;
+        }
+
+        function LoadRepliesFor(commentId) {
+            const comment = document.getElementById(commentId);
+            const loadRepliesBtn = comment.getElementsByClassName("loadRepliesBtn")[0];
+            var postId = GetPostId();
+            if (postId === "") {
+                alert("Error obteniendo id de la publicación.");
+            } else {
+                loadRepliesBtn.setAttribute("disabled", "disabled");
+                loadRepliesBtn.innerHTML = "<span class='spinner-grow text-primary' role='status'><span class='sr-only'>Cargando comentarios...</span></span>";
+                $.ajax({
+                    url: "/posts/loadrepliesforcomment",
+                    data: {
+                        postId: postId,
+                        commentId: commentId
+                    },
+                    method: "POST",
+                    complete: function (response) {
+                        loadRepliesBtn.remove();
+                        const commentBody = comment.getElementsByClassName("media-body")[0];
+                        const actualReplies = commentBody.getElementsByClassName("media");
+                        for (var i = 0; i < actualReplies.length; i++) {
+                            var reply = actualReplies[i];
+                            reply.remove();
+                        }
+                        commentBody.innerHTML += response.responseText;
+                    },
+                    error: function (response) {
+                        alert("Error cargando comentarios: " + response.responseText);
+                        loadRepliesBtn.innerHTML = "<span class='fa fa-list'></span> Respuestas &middot;";
+                        loadingModal.modal("hide");
+                    }
+                });
+            }
+        }
+
+    </script>
+}
